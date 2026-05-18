@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DU Creatives — Content Creator Database</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+    <script>
+        window.pdfjsReady = import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs').then(mod => {
+            mod.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+            window.pdfjsLib = mod;
+            return mod;
+        });
+    </script>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-inner">
+            <div class="nav-brand">
+                <img src="logo.png" alt="DU Creatives" class="nav-logo">
+                <span class="nav-brand-name">DU Creatives</span>
+            </div>
+            <div class="nav-actions">
+                <button class="nav-bell" id="accessBell" title="Access Requests">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <span class="bell-badge hidden" id="bellBadge">0</span>
+                </button>
+                <button class="logout-btn" id="logoutBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                </button>
+            </div>
+
+            <!-- Access requests dropdown -->
+            <div class="access-panel hidden" id="accessPanel">
+                <div class="access-panel-header">
+                    <h4>Access Requests</h4>
+                    <button class="access-panel-close" id="accessPanelClose">&times;</button>
+                </div>
+                <div id="accessList" class="access-list">
+                    <p class="access-empty">No pending requests</p>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app">
+        <header>
+            <h1 class="page-title">Content Creator Database</h1>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="upload">Add Creator</button>
+            <button class="tab" data-tab="catalogue">Catalogue</button>
+            <button class="tab" data-tab="quotation">Quotation Builder</button>
+            <button class="tab" data-tab="backup">Backup</button>
+        </div>
+
+        <section id="upload" class="tab-content active">
+            <!-- Mode toggle -->
+            <div class="add-mode-toggle">
+                <button class="mode-btn active" id="modeUpload">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Upload Rate Card
+                </button>
+                <button class="mode-btn" id="modeManual">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Fill Manually
+                </button>
+            </div>
+
+            <!-- Upload area (shown in upload mode) -->
+            <div id="uploadArea">
+                <div class="upload-area" id="dropZone">
+                    <div class="upload-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <p>Drag & drop a rate card here</p>
+                    <p class="small">or click to browse (JPG, PNG, PDF)</p>
+                    <input type="file" id="fileInput" accept="image/jpeg,image/png,application/pdf" hidden>
+                </div>
+
+                <div id="processingSection" class="hidden">
+                    <div class="preview-row">
+                        <div class="image-preview">
+                            <img id="previewImage" alt="Rate card preview">
+                        </div>
+                        <div class="ocr-status">
+                            <div class="spinner" id="spinner"></div>
+                            <p id="ocrStatus">Initializing OCR...</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="extractedText" class="hidden">
+                        <h3>Extracted Text</h3>
+                        <pre id="rawText"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shared form (used by both modes) -->
+            <div id="formSection" class="hidden">
+                <h3 id="formTitle">Review & Edit Extracted Data</h3>
+                <form id="influencerForm">
+
+                    <!-- Profile Photo -->
+                    <div class="form-section-block">
+                        <label class="section-label">Profile Photo</label>
+                        <div class="profile-upload-row">
+                            <div class="profile-photo-preview" id="profilePhotoPreview">
+                                <span>+</span>
+                            </div>
+                            <div class="profile-upload-info">
+                                <input type="file" id="profilePhotoInput" accept="image/jpeg,image/png" hidden>
+                                <button type="button" class="btn secondary btn-sm" id="profilePhotoBtn">Choose Photo</button>
+                                <p class="small">Square photo works best</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Name & Gender -->
+                    <div class="form-section-block">
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" id="f_name" required placeholder="Full name">
+                            </div>
+                            <div class="form-group">
+                                <label>Gender</label>
+                                <select id="f_gender">
+                                    <option value="">Select</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Non-binary">Non-binary</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profiles (social handles + URLs) -->
+                    <div class="form-section-block">
+                        <label class="section-label">Profiles</label>
+                        <div class="platform-inputs">
+                            <div class="platform-input-row">
+                                <img src="https://cdn.simpleicons.org/instagram/E4405F" alt="IG" class="platform-icon-img">
+                                <input type="text" id="f_handle_ig" placeholder="@instagram_handle" class="handle-input">
+                                <input type="url" id="f_url_ig" placeholder="https://instagram.com/..." class="url-input">
+                            </div>
+                            <div class="platform-input-row">
+                                <img src="https://cdn.simpleicons.org/tiktok/000000" alt="TT" class="platform-icon-img">
+                                <input type="text" id="f_handle_tiktok" placeholder="@tiktok_handle" class="handle-input">
+                                <input type="url" id="f_url_tiktok" placeholder="https://tiktok.com/@..." class="url-input">
+                            </div>
+                            <div class="platform-input-row">
+                                <img src="https://cdn.simpleicons.org/facebook/1877F2" alt="FB" class="platform-icon-img">
+                                <input type="text" id="f_handle_fb" placeholder="@facebook_handle" class="handle-input">
+                                <input type="url" id="f_url_fb" placeholder="https://facebook.com/..." class="url-input">
+                            </div>
+                            <div class="platform-input-row">
+                                <img src="https://cdn.simpleicons.org/youtube/FF0000" alt="YT" class="platform-icon-img">
+                                <input type="text" id="f_handle_yt" placeholder="@youtube_handle" class="handle-input">
+                                <input type="url" id="f_url_yt" placeholder="https://youtube.com/@..." class="url-input">
+                            </div>
+                            <div class="platform-input-row">
+                                <img src="https://cdn.simpleicons.org/xiaohongshu/FF2442" alt="XHS" class="platform-icon-img">
+                                <input type="text" id="f_handle_xhs" placeholder="@xiaohongshu_handle" class="handle-input">
+                                <input type="url" id="f_url_xhs" placeholder="https://xiaohongshu.com/..." class="url-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Followers by Platform (smart input) -->
+                    <div class="form-section-block">
+                        <label class="section-label">Followers by Platform</label>
+                        <p class="section-hint">Type naturally: 19K, 1.2M, 850 — auto-converts for search</p>
+                        <div class="platform-inputs">
+                            <div class="platform-input-row">
+                                <img src="https://cdn.simpleicons.org/instagram/E4405F" alt="IG" class="platform-icon-img">
+                                <input type="text" id="f_ig_followers" placeholder="e.g. 19K" class="smart-follower" data-raw="f_ig_followers_raw">
+                                <input type="hidden" id="f_ig_followers_raw">
+                            </div>
+                            <div class="platform-input-row">
+                                <img src="https://cdn.simpleicons.org/tiktok/000000" alt="TT" class="platform-icon-img">
+                                <input type="text" id="f_tiktok_followers" placeholder="e.g. 50K" class="smart-follower" data-raw="f_tiktok_followers_raw">
+                                <input type="hidden" id="f_tiktok_followers_raw">
+                            </div>
+                            <div class="platform-input-row">
+                                <img src="https://cdn.simpleicons.org/facebook/1877F2" alt="FB" class="platform-icon-img">
+                                <input type="text" id="f_fb_followers" placeholder="e.g. 10K" class="smart-follower" data-raw="f_fb_followers_raw">
+                                <input type="hidden" id="f_fb_followers_raw">
+                            </div>
+                            <div class="platform-input-row">
+                                <img src="https://cdn.simpleicons.org/youtube/FF0000" alt="YT" class="platform-icon-img">
+                                <input type="text" id="f_yt_followers" placeholder="e.g. 100K" class="smart-follower" data-raw="f_yt_followers_raw">
+                                <input type="hidden" id="f_yt_followers_raw">
+                            </div>
+                            <div class="platform-input-row">
+                                <img src="https://cdn.simpleicons.org/xiaohongshu/FF2442" alt="XHS" class="platform-icon-img">
+                                <input type="text" id="f_xhs_followers" placeholder="e.g. 5K" class="smart-follower" data-raw="f_xhs_followers_raw">
+                                <input type="hidden" id="f_xhs_followers_raw">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rates (SGD) — Expandable categories -->
+                    <div class="form-section-block">
+                        <label class="section-label">Rates (SGD)</label>
+                        <p class="section-hint">Click a platform to expand and fill in content type rates (numbers only)</p>
+
+                        <div class="rate-accordion">
+                            <!-- Instagram -->
+                            <div class="rate-category">
+                                <button type="button" class="rate-cat-toggle" data-target="rates-ig">
+                                    <img src="https://cdn.simpleicons.org/instagram/E4405F" alt="IG" class="platform-icon-img">
+                                    <span>Instagram</span>
+                                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="rate-cat-body" id="rates-ig">
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">IG Story</span>
+                                        <input type="number" id="f_rate_ig_story_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_ig_story_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_ig_story_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">IG Static Post</span>
+                                        <input type="number" id="f_rate_ig_post_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_ig_post_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_ig_post_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">IG Carousel</span>
+                                        <input type="number" id="f_rate_ig_carousel_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_ig_carousel_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_ig_carousel_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">IG Reel</span>
+                                        <input type="number" id="f_rate_ig_reel_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_ig_reel_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_ig_reel_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TikTok -->
+                            <div class="rate-category">
+                                <button type="button" class="rate-cat-toggle" data-target="rates-tt">
+                                    <img src="https://cdn.simpleicons.org/tiktok/000000" alt="TT" class="platform-icon-img">
+                                    <span>TikTok</span>
+                                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="rate-cat-body" id="rates-tt">
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">TikTok Video</span>
+                                        <input type="number" id="f_rate_tiktok_video_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_tiktok_video_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_tiktok_video_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">TikTok Carousel</span>
+                                        <input type="number" id="f_rate_tiktok_carousel_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_tiktok_carousel_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_tiktok_carousel_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">TikTok Story</span>
+                                        <input type="number" id="f_rate_tiktok_story_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_tiktok_story_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_tiktok_story_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Facebook -->
+                            <div class="rate-category">
+                                <button type="button" class="rate-cat-toggle" data-target="rates-fb">
+                                    <img src="https://cdn.simpleicons.org/facebook/1877F2" alt="FB" class="platform-icon-img">
+                                    <span>Facebook</span>
+                                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="rate-cat-body" id="rates-fb">
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">Facebook Video</span>
+                                        <input type="number" id="f_rate_fb_video_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_fb_video_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_fb_video_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">Facebook Photo</span>
+                                        <input type="number" id="f_rate_fb_photo_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_fb_photo_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_fb_photo_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- YouTube -->
+                            <div class="rate-category">
+                                <button type="button" class="rate-cat-toggle" data-target="rates-yt">
+                                    <img src="https://cdn.simpleicons.org/youtube/FF0000" alt="YT" class="platform-icon-img">
+                                    <span>YouTube</span>
+                                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="rate-cat-body" id="rates-yt">
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">YouTube Video</span>
+                                        <input type="number" id="f_rate_yt_video_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_yt_video_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_yt_video_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Xiao Hong Shu -->
+                            <div class="rate-category">
+                                <button type="button" class="rate-cat-toggle" data-target="rates-xhs">
+                                    <img src="https://cdn.simpleicons.org/xiaohongshu/FF2442" alt="XHS" class="platform-icon-img">
+                                    <span>Xiao Hong Shu</span>
+                                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="rate-cat-body" id="rates-xhs">
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">XHS Video</span>
+                                        <input type="number" id="f_rate_xhs_video_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_xhs_video_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_xhs_video_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                    <div class="rate-type-row">
+                                        <span class="rate-type-label">XHS Photo</span>
+                                        <input type="number" id="f_rate_xhs_photo_min" placeholder="Min" class="rate-input" min="0">
+                                        <span class="rate-sep">-</span>
+                                        <input type="number" id="f_rate_xhs_photo_max" placeholder="Max" class="rate-input" min="0">
+                                        <input type="text" id="f_rate_xhs_photo_notes" placeholder="Notes" class="rate-notes-input">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Style -->
+                    <div class="form-section-block">
+                        <div class="form-group">
+                            <label>Content Style</label>
+                            <input type="text" id="f_content_style" placeholder="e.g. Photography, Fashion, Parenting, Travel">
+                        </div>
+                    </div>
+
+                    <!-- Contact -->
+                    <div class="form-section-block">
+                        <label class="section-label">Contact</label>
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="f_email" placeholder="email@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Phone No.</label>
+                                <input type="tel" id="f_phone" placeholder="+65 9123 4567">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="form-section-block">
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="f_location" placeholder="e.g. Singapore">
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="form-section-block">
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea id="f_notes" rows="3" placeholder="Previous collaborations, special requirements, etc."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn primary">Save to Catalogue</button>
+                        <button type="button" class="btn secondary" id="clearForm">Clear</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="catalogue" class="tab-content">
+            <div class="catalogue-layout">
+                <aside class="filter-sidebar">
+                    <div class="sidebar-section">
+                        <label class="sidebar-label">Search</label>
+                        <div class="sidebar-search">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="searchInput" placeholder="Name or keyword">
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <label class="sidebar-label">Gender</label>
+                        <select id="filterGender">
+                            <option value="">All</option>
+                            <option value="Female">Female</option>
+                            <option value="Male">Male</option>
+                            <option value="Non-binary">Non-binary</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <label class="sidebar-label">Platform</label>
+                        <div class="platform-filter-list" id="filterPlatformList">
+                            <label class="platform-filter-option">
+                                <input type="radio" name="filterPlatform" value="" checked>
+                                <span>All Platforms</span>
+                            </label>
+                            <label class="platform-filter-option">
+                                <input type="radio" name="filterPlatform" value="instagram">
+                                <img src="https://cdn.simpleicons.org/instagram/E4405F" class="platform-icon-img-sm">
+                                <span>Instagram</span>
+                            </label>
+                            <label class="platform-filter-option">
+                                <input type="radio" name="filterPlatform" value="tiktok">
+                                <img src="https://cdn.simpleicons.org/tiktok/000000" class="platform-icon-img-sm">
+                                <span>TikTok</span>
+                            </label>
+                            <label class="platform-filter-option">
+                                <input type="radio" name="filterPlatform" value="facebook">
+                                <img src="https://cdn.simpleicons.org/facebook/1877F2" class="platform-icon-img-sm">
+                                <span>Facebook</span>
+                            </label>
+                            <label class="platform-filter-option">
+                                <input type="radio" name="filterPlatform" value="youtube">
+                                <img src="https://cdn.simpleicons.org/youtube/FF0000" class="platform-icon-img-sm">
+                                <span>YouTube</span>
+                            </label>
+                            <label class="platform-filter-option">
+                                <input type="radio" name="filterPlatform" value="xhs">
+                                <img src="https://cdn.simpleicons.org/xiaohongshu/FF2442" class="platform-icon-img-sm">
+                                <span>Xiao Hong Shu</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <label class="sidebar-label">Followers</label>
+                        <div class="range-row">
+                            <div class="follower-dropdown-wrap">
+                                <input type="text" id="filterFollowersMin" placeholder="From" autocomplete="off">
+                                <div class="follower-dropdown" id="followerFromDropdown"></div>
+                            </div>
+                            <span class="range-sep">-</span>
+                            <div class="follower-dropdown-wrap">
+                                <input type="text" id="filterFollowersMax" placeholder="To" autocomplete="off">
+                                <div class="follower-dropdown" id="followerToDropdown"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <label class="sidebar-label">Rate Budget</label>
+                        <div class="range-row">
+                            <input type="text" id="filterRateMin" placeholder="Min $">
+                            <span class="range-sep">-</span>
+                            <input type="text" id="filterRateMax" placeholder="Max $">
+                        </div>
+                    </div>
+
+                    <button class="btn secondary sidebar-reset" id="resetFilters">Reset Filters</button>
+                </aside>
+
+                <div class="catalogue-main">
+                    <div class="catalogue-toolbar">
+                        <span class="result-count" id="resultCount">0 profiles</span>
+                        <div class="toolbar-right">
+                            <select id="sortBy">
+                                <option value="name">Name</option>
+                                <option value="ig_followers">IG Followers</option>
+                                <option value="tiktok_followers">TikTok Followers</option>
+                                <option value="created">Recently Added</option>
+                            </select>
+                            <div class="view-toggle">
+                                <button class="view-btn active" data-view="list" id="viewList" title="List view">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                                </button>
+                                <button class="view-btn" data-view="grid" id="viewGrid" title="Grid view">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                                </button>
+                            </div>
+                            <button class="btn secondary btn-sm" id="exportBtn">Export CSV</button>
+                        </div>
+                    </div>
+
+                    <div class="list-header">
+                        <div class="lh-profile">Profile</div>
+                        <div class="lh-stat">Followers</div>
+                        <div class="lh-stat">Content</div>
+                        <div class="lh-stat">IG Rates</div>
+                        <div class="lh-stat">TT Rates</div>
+                        <div class="lh-stat">Other Rates</div>
+                        <div class="lh-actions"></div>
+                    </div>
+
+                    <div id="catalogueGrid" class="catalogue-list"></div>
+                    <div id="emptyState" class="empty-state">
+                        <p>No influencers yet. Upload a rate card to get started!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="quotation" class="tab-content">
+            <div class="quote-builder">
+                <div class="quote-header">
+                    <h2 class="quote-title">Quotation Builder</h2>
+                    <div class="quote-header-actions">
+                        <button class="btn secondary btn-sm" id="quoteClearAll">Clear All</button>
+                        <button class="btn primary btn-sm" id="quoteExport">Export Quotation</button>
+                    </div>
+                </div>
+
+                <div id="quoteEmpty" class="empty-state">
+                    <p>No creators added yet. Go to Catalogue and click <strong>+ Quote</strong> to add creators.</p>
+                </div>
+
+                <div id="quoteContent" class="hidden">
+                    <div class="quote-table">
+                        <div class="quote-table-header">
+                            <div class="qt-profile">Creator</div>
+                            <div class="qt-deliverables">Deliverables</div>
+                            <div class="qt-amount">Amount (SGD)</div>
+                            <div class="qt-actions"></div>
+                        </div>
+                        <div id="quoteRows"></div>
+                        <div class="quote-total-row">
+                            <div class="qt-total-label">Total</div>
+                            <div class="qt-total-amount" id="quoteTotal">$0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="backup" class="tab-content">
+            <div class="backup-page">
+                <h2 class="backup-title">Backup & Restore</h2>
+
+                <div class="backup-grid">
+                    <!-- Last backup info -->
+                    <div class="backup-card">
+                        <div class="backup-card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </div>
+                        <h3>Last Backup</h3>
+                        <p class="backup-date" id="lastBackupDate">No backups yet</p>
+                        <p class="backup-meta" id="lastBackupMeta"></p>
+                    </div>
+
+                    <!-- Export -->
+                    <div class="backup-card">
+                        <div class="backup-card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </div>
+                        <h3>Export Backup</h3>
+                        <p class="backup-desc">Download the full creator database with all data and rates.</p>
+                        <div class="backup-actions">
+                            <button class="btn primary btn-sm" id="backupJSON">Export JSON</button>
+                            <button class="btn secondary btn-sm" id="backupCSV">Export CSV</button>
+                        </div>
+                    </div>
+
+                    <!-- Import -->
+                    <div class="backup-card">
+                        <div class="backup-card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </div>
+                        <h3>Import / Restore</h3>
+                        <p class="backup-desc">Upload a previous JSON backup file to restore the database.</p>
+                        <div class="backup-actions">
+                            <input type="file" id="importFileInput" accept=".json" hidden>
+                            <button class="btn secondary btn-sm" id="importBtn">Choose JSON File</button>
+                        </div>
+                        <p class="backup-warning" id="importStatus"></p>
+                    </div>
+
+                    <!-- Google Drive -->
+                    <div class="backup-card">
+                        <div class="backup-card-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2"><path d="M12 2L2 19.5h20L12 2z"/><path d="M12 2l8.5 17.5"/><path d="M2 19.5h17"/></svg>
+                        </div>
+                        <h3>Google Drive</h3>
+                        <p class="backup-desc">Download backup then save to your Google Drive folder.</p>
+                        <div class="backup-actions">
+                            <button class="btn secondary btn-sm" id="backupDrive">Download for Drive</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detail modal -->
+        <div id="modal" class="modal hidden">
+            <div class="modal-content">
+                <button class="modal-close" id="modalClose">&times;</button>
+                <div id="modalBody"></div>
+            </div>
+        </div>
+
+        <!-- Photo crop modal -->
+        <div id="cropModal" class="modal hidden">
+            <div class="modal-content crop-modal-content">
+                <h3 style="margin-bottom:1rem">Adjust Photo</h3>
+                <div class="crop-wrapper">
+                    <div class="crop-viewport" id="cropViewport">
+                        <img id="cropImage" draggable="false">
+                    </div>
+                    <svg class="crop-overlay-svg" viewBox="0 0 300 300" preserveAspectRatio="none">
+                        <defs>
+                            <mask id="circleMask">
+                                <rect width="300" height="300" fill="white"/>
+                                <circle cx="150" cy="150" r="130" fill="black"/>
+                            </mask>
+                        </defs>
+                        <rect width="300" height="300" fill="rgba(0,0,0,0.55)" mask="url(#circleMask)"/>
+                        <circle cx="150" cy="150" r="130" fill="none" stroke="white" stroke-width="2" stroke-dasharray="6 4"/>
+                    </svg>
+                </div>
+                <div class="crop-controls">
+                    <span style="font-size:0.8rem;color:#888">Zoom</span>
+                    <input type="range" id="cropZoom" min="1" max="3" step="0.02" value="1">
+                </div>
+                <p style="font-size:0.75rem;color:#aaa;text-align:center;margin-bottom:0.75rem">Drag to reposition &middot; Scroll or slider to zoom</p>
+                <div class="crop-actions">
+                    <button class="btn primary" id="cropSave">Save</button>
+                    <button class="btn secondary" id="cropCancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
