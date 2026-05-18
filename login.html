@@ -100,40 +100,6 @@
         .login-btn:hover { background-position: right center; box-shadow: 0 4px 20px rgba(236,72,153,0.35); }
         .login-btn:disabled { opacity: 0.7; cursor: not-allowed; }
 
-        /* Waiting state */
-        .waiting-state { display: none; }
-        .waiting-state.show { display: block; }
-
-        .waiting-spinner {
-            width: 48px; height: 48px;
-            border: 3px solid #eee; border-top-color: #ec4899;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 1.25rem;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .waiting-text { color: #888; font-size: 0.9rem; margin-bottom: 0.5rem; }
-        .waiting-name { font-weight: 600; color: #1a1a1a; font-size: 0.95rem; margin-bottom: 1.25rem; }
-
-        .cancel-link {
-            color: #ccc; cursor: pointer; text-decoration: underline;
-            font-size: 0.82rem; background: none; border: none;
-        }
-        .cancel-link:hover { color: #888; }
-
-        /* Rejected state */
-        .rejected-icon {
-            width: 48px; height: 48px;
-            background: #fef2f2; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 1rem;
-        }
-
-        .try-again-link {
-            color: #ec4899; cursor: pointer; text-decoration: underline;
-            font-size: 0.85rem; background: none; border: none; margin-top: 0.75rem;
-        }
     </style>
 </head>
 <body>
@@ -142,14 +108,10 @@
         <img src="logo.png" alt="DU Creatives" class="logo-img">
         <h2>Content Creator Database</h2>
 
-        <!-- Step 1: Password + Name -->
+        <!-- Step 1: Password -->
         <div id="loginState">
-            <p class="sub">Enter the password to request access</p>
+            <p class="sub">Enter the password to access</p>
             <form id="loginForm">
-                <div class="field name-field">
-                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    <input type="text" id="nameInput" placeholder="Your name" required>
-                </div>
                 <div class="field">
                     <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                     <input type="password" id="passwordInput" placeholder="Password" required>
@@ -160,28 +122,12 @@
                     </button>
                 </div>
                 <p id="loginMsg" class="login-msg"></p>
-                <button type="submit" class="login-btn" id="loginBtn">Request Access</button>
+                <button type="submit" class="login-btn" id="loginBtn">Login</button>
             </form>
         </div>
 
-        <!-- Step 2: Waiting for approval -->
-        <div id="waitingState" class="waiting-state">
-            <div class="waiting-spinner"></div>
-            <p class="waiting-text">Waiting for admin approval...</p>
-            <p class="waiting-name" id="waitingName"></p>
-            <p style="color:#bbb;font-size:0.78rem;margin-bottom:1rem">Your request has been sent. The admin will approve it shortly.</p>
-            <button class="cancel-link" id="cancelRequest">Cancel</button>
-        </div>
 
-        <!-- Step 3: Rejected -->
-        <div id="rejectedState" class="waiting-state">
-            <div class="rejected-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-            </div>
-            <p style="font-weight:600;color:#1a1a1a;margin-bottom:0.5rem">Access Denied</p>
-            <p style="color:#888;font-size:0.85rem">Your request was not approved.</p>
-            <button class="try-again-link" id="tryAgain">Try Again</button>
-        </div>
+
     </div>
 
     <script>
@@ -205,15 +151,11 @@
             pwInput.type = showing ? 'password' : 'text';
         });
 
-        let currentSessionId = null;
-        let realtimeChannel = null;
-
         // Login form submit
         document.getElementById('loginForm').addEventListener('submit', async e => {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
             const msg = document.getElementById('loginMsg');
-            const name = document.getElementById('nameInput').value.trim();
             const password = pwInput.value;
 
             btn.disabled = true;
@@ -221,7 +163,7 @@
             msg.classList.remove('show');
 
             try {
-                // Verify password via RPC (password is NOT in frontend code)
+                // Verify password via RPC
                 const { data: isValid, error } = await supabaseClient.rpc('verify_access_password', { pwd: password });
 
                 if (error || !isValid) {
@@ -229,145 +171,40 @@
                     msg.className = 'login-msg show error';
                     pwInput.select();
                     btn.disabled = false;
-                    btn.textContent = 'Request Access';
+                    btn.textContent = 'Login';
                     return;
                 }
 
-                // Password correct — check if this user has been approved before
-                const userName = name || 'Anonymous';
+                // Password correct — create session and log in
                 const sessionToken = crypto.randomUUID();
                 const deviceInfo = navigator.userAgent.substring(0, 100);
 
-                const { data: previousApproval } = await supabaseClient
-                    .from('access_sessions')
-                    .select('id')
-                    .eq('requester_name', userName)
-                    .eq('status', 'approved')
-                    .limit(1);
-
-                if (previousApproval && previousApproval.length > 0) {
-                    // Returning user — auto-approve, skip admin approval
-                    const { data: session, error: insertErr } = await supabaseClient
-                        .from('access_sessions')
-                        .insert([{
-                            session_token: sessionToken,
-                            requester_name: userName,
-                            device_info: deviceInfo,
-                            status: 'approved',
-                            approved_at: new Date().toISOString()
-                        }])
-                        .select()
-                        .single();
-
-                    if (insertErr) throw insertErr;
-
-                    localStorage.setItem('duc_session', sessionToken);
-                    localStorage.setItem('duc_user', userName);
-                    window.location.href = '/';
-                    return;
-                }
-
-                // New user — create pending request and wait for admin approval
                 const { data: session, error: insertErr } = await supabaseClient
                     .from('access_sessions')
                     .insert([{
                         session_token: sessionToken,
-                        requester_name: userName,
+                        requester_name: 'User',
                         device_info: deviceInfo,
-                        status: 'pending'
+                        status: 'approved',
+                        approved_at: new Date().toISOString()
                     }])
                     .select()
                     .single();
 
                 if (insertErr) throw insertErr;
 
-                currentSessionId = session.id;
-
-                // Show waiting state
-                document.getElementById('loginState').style.display = 'none';
-                document.getElementById('waitingState').classList.add('show');
-                document.getElementById('waitingName').textContent = userName;
-
-                // Subscribe to Realtime for this session's status changes
-                realtimeChannel = supabaseClient
-                    .channel('session-' + session.id)
-                    .on('postgres_changes', {
-                        event: 'UPDATE',
-                        schema: 'public',
-                        table: 'access_sessions',
-                        filter: 'id=eq.' + session.id
-                    }, (payload) => {
-                        const newStatus = payload.new.status;
-                        if (newStatus === 'approved') {
-                            localStorage.setItem('duc_session', sessionToken);
-                            localStorage.setItem('duc_user', userName);
-                            window.location.href = '/';
-                        } else if (newStatus === 'rejected') {
-                            showRejected();
-                        }
-                    })
-                    .subscribe();
-
-                // Also poll every 5s as fallback (in case Realtime has issues)
-                startPolling(sessionToken, name);
+                localStorage.setItem('duc_session', sessionToken);
+                window.location.href = '/';
 
             } catch (err) {
                 msg.textContent = 'Error: ' + err.message;
                 msg.className = 'login-msg show error';
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Request Access';
+                btn.textContent = 'Login';
             }
         });
 
-        let pollInterval = null;
-
-        function startPolling(token, name) {
-            pollInterval = setInterval(async () => {
-                const { data } = await supabaseClient.rpc('check_session', { token });
-                if (data && data.length) {
-                    if (data[0].session_status === 'approved') {
-                        clearInterval(pollInterval);
-                        localStorage.setItem('duc_session', token);
-                        localStorage.setItem('duc_user', name || 'Anonymous');
-                        window.location.href = '/';
-                    } else if (data[0].session_status === 'rejected') {
-                        clearInterval(pollInterval);
-                        showRejected();
-                    }
-                }
-            }, 5000);
-        }
-
-        function showRejected() {
-            document.getElementById('waitingState').classList.remove('show');
-            document.getElementById('rejectedState').classList.add('show');
-            if (realtimeChannel) {
-                supabaseClient.removeChannel(realtimeChannel);
-                realtimeChannel = null;
-            }
-        }
-
-        // Cancel request
-        document.getElementById('cancelRequest').addEventListener('click', async () => {
-            if (pollInterval) clearInterval(pollInterval);
-            if (realtimeChannel) {
-                supabaseClient.removeChannel(realtimeChannel);
-                realtimeChannel = null;
-            }
-            if (currentSessionId) {
-                await supabaseClient.from('access_sessions').update({ status: 'rejected' }).eq('id', currentSessionId);
-            }
-            document.getElementById('waitingState').classList.remove('show');
-            document.getElementById('loginState').style.display = 'block';
-        });
-
-        // Try again
-        document.getElementById('tryAgain').addEventListener('click', () => {
-            document.getElementById('rejectedState').classList.remove('show');
-            document.getElementById('loginState').style.display = 'block';
-            pwInput.value = '';
-        });
     </script>
 </body>
 </html>
