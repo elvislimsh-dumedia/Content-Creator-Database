@@ -233,15 +233,46 @@
                     return;
                 }
 
-                // Password correct — create access request
+                // Password correct — check if this user has been approved before
+                const userName = name || 'Anonymous';
                 const sessionToken = crypto.randomUUID();
                 const deviceInfo = navigator.userAgent.substring(0, 100);
 
+                const { data: previousApproval } = await supabaseClient
+                    .from('access_sessions')
+                    .select('id')
+                    .eq('requester_name', userName)
+                    .eq('status', 'approved')
+                    .limit(1);
+
+                if (previousApproval && previousApproval.length > 0) {
+                    // Returning user — auto-approve, skip admin approval
+                    const { data: session, error: insertErr } = await supabaseClient
+                        .from('access_sessions')
+                        .insert([{
+                            session_token: sessionToken,
+                            requester_name: userName,
+                            device_info: deviceInfo,
+                            status: 'approved',
+                            approved_at: new Date().toISOString()
+                        }])
+                        .select()
+                        .single();
+
+                    if (insertErr) throw insertErr;
+
+                    localStorage.setItem('duc_session', sessionToken);
+                    localStorage.setItem('duc_user', userName);
+                    window.location.href = '/';
+                    return;
+                }
+
+                // New user — create pending request and wait for admin approval
                 const { data: session, error: insertErr } = await supabaseClient
                     .from('access_sessions')
                     .insert([{
                         session_token: sessionToken,
-                        requester_name: name || 'Anonymous',
+                        requester_name: userName,
                         device_info: deviceInfo,
                         status: 'pending'
                     }])
@@ -255,7 +286,7 @@
                 // Show waiting state
                 document.getElementById('loginState').style.display = 'none';
                 document.getElementById('waitingState').classList.add('show');
-                document.getElementById('waitingName').textContent = name || 'Anonymous';
+                document.getElementById('waitingName').textContent = userName;
 
                 // Subscribe to Realtime for this session's status changes
                 realtimeChannel = supabaseClient
@@ -269,7 +300,7 @@
                         const newStatus = payload.new.status;
                         if (newStatus === 'approved') {
                             localStorage.setItem('duc_session', sessionToken);
-                            localStorage.setItem('duc_user', name || 'Anonymous');
+                            localStorage.setItem('duc_user', userName);
                             window.location.href = '/';
                         } else if (newStatus === 'rejected') {
                             showRejected();
