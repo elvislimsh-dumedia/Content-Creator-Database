@@ -1186,6 +1186,46 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
     text-align: right;
 }
 
+/* Pagination */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.25rem 0;
+    margin-top: 0.5rem;
+}
+
+.page-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    color: #555;
+    transition: all 0.15s;
+}
+
+.page-btn:hover:not(:disabled) {
+    border-color: #7c5cfc;
+    color: #7c5cfc;
+}
+
+.page-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-size: 0.85rem;
+    color: #888;
+    font-weight: 500;
+}
+
 /* Grid view (toggle) */
 .catalogue-grid-view {
     display: grid;

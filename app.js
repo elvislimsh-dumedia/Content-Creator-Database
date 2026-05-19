@@ -1093,13 +1093,23 @@ function renderGridCard(item) {
         </div>`;
 }
 
+const ITEMS_PER_PAGE = 25;
+let currentPage = 1;
+
 async function renderCatalogue() {
     const catalogue = await fetchCatalogue();
 
     const container = document.getElementById('catalogueGrid');
     const empty = document.getElementById('emptyState');
     const listHeader = document.querySelector('.list-header');
+    const paginationEl = document.getElementById('pagination');
     const filtered = getFiltered(catalogue);
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const pageItems = filtered.slice(start, start + ITEMS_PER_PAGE);
 
     document.getElementById('resultCount').textContent = `${filtered.length} profile${filtered.length !== 1 ? 's' : ''}`;
 
@@ -1108,6 +1118,7 @@ async function renderCatalogue() {
         container.className = '';
         if (listHeader) listHeader.style.display = 'none';
         empty.classList.remove('hidden');
+        paginationEl.classList.add('hidden');
         return;
     }
 
@@ -1116,13 +1127,32 @@ async function renderCatalogue() {
     if (currentView === 'list') {
         container.className = 'catalogue-list';
         if (listHeader) listHeader.style.display = '';
-        container.innerHTML = filtered.map(renderListRow).join('');
+        container.innerHTML = pageItems.map(renderListRow).join('');
     } else {
         container.className = 'catalogue-grid-view';
         if (listHeader) listHeader.style.display = 'none';
-        container.innerHTML = filtered.map(renderGridCard).join('');
+        container.innerHTML = pageItems.map(renderGridCard).join('');
+    }
+
+    // Update pagination
+    if (totalPages > 1) {
+        paginationEl.classList.remove('hidden');
+        document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+        document.getElementById('prevPage').disabled = currentPage <= 1;
+        document.getElementById('nextPage').disabled = currentPage >= totalPages;
+    } else {
+        paginationEl.classList.add('hidden');
     }
 }
+
+document.getElementById('prevPage').addEventListener('click', () => {
+    if (currentPage > 1) { currentPage--; renderCatalogue(); }
+});
+
+document.getElementById('nextPage').addEventListener('click', () => {
+    currentPage++;
+    renderCatalogue();
+});
 
 function parseFollowerCount(str) {
     if (!str) return 0;
@@ -1253,7 +1283,13 @@ document.getElementById('modal').addEventListener('click', e => {
 let searchTimer;
 function debounceRender() {
     clearTimeout(searchTimer);
+    currentPage = 1;
     searchTimer = setTimeout(renderCatalogue, 250);
+}
+
+function filterChanged() {
+    currentPage = 1;
+    renderCatalogue();
 }
 
 document.getElementById('searchInput').addEventListener('input', debounceRender);
@@ -1261,9 +1297,9 @@ document.getElementById('filterFollowersMin').addEventListener('input', debounce
 document.getElementById('filterFollowersMax').addEventListener('input', debounceRender);
 document.getElementById('filterRateMin').addEventListener('input', debounceRender);
 document.getElementById('filterRateMax').addEventListener('input', debounceRender);
-document.getElementById('filterGender').addEventListener('change', renderCatalogue);
-document.querySelectorAll('input[name="filterPlatform"]').forEach(r => r.addEventListener('change', renderCatalogue));
-document.getElementById('sortBy').addEventListener('change', renderCatalogue);
+document.getElementById('filterGender').addEventListener('change', filterChanged);
+document.querySelectorAll('input[name="filterPlatform"]').forEach(r => r.addEventListener('change', filterChanged));
+document.getElementById('sortBy').addEventListener('change', filterChanged);
 
 // View toggle
 document.getElementById('viewList').addEventListener('click', () => {
