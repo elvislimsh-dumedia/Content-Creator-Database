@@ -1381,9 +1381,12 @@ async function showDetail(id) {
     try { attachments = item.attachments ? JSON.parse(item.attachments) : []; } catch(e) {}
 
     const viewAttachmentsHTML = attachments.length ? attachments.map((att, i) => `
-        <div class="attachment-item" data-index="${i}">
-            ${att.type === 'image' ? `<img src="${att.data}" class="attachment-thumb" onclick="viewAttachment(${i})">` :
-              `<div class="attachment-file" onclick="viewAttachment(${i})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="att-name">${esc(att.name || 'PDF')}</span></div>`}
+        <div class="attachment-view-item" style="margin-bottom:0.75rem;">
+            ${att.type === 'image' ? `<img src="${att.data}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="viewAttachment(${i})">` :
+              `<div class="attachment-file-view" onclick="viewAttachment(${i})" style="display:flex;align-items:center;gap:8px;padding:1rem;background:#f8f8ff;border-radius:8px;cursor:pointer;border:1px solid #e5e5f0;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span style="font-size:0.95rem;color:#333;">${esc(att.name || 'PDF')}</span>
+              </div>`}
         </div>
     `).join('') : '';
 
@@ -1446,9 +1449,9 @@ async function showDetail(id) {
 
             ${item.notes ? `<div class="detail-section"><h4>Notes</h4><p>${esc(item.notes)}</p></div>` : ''}
 
-            ${viewAttachmentsHTML ? `<div class="detail-section"><h4>Attachments</h4><div class="attachments-grid">${viewAttachmentsHTML}</div></div>` : ''}
-
             ${item.image ? `<div class="detail-section"><h4>Original Rate Card</h4><img src="${item.image}" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>` : ''}
+
+            ${viewAttachmentsHTML ? `<div class="detail-section"><h4>Attachments</h4>${viewAttachmentsHTML}</div>` : ''}
         </div>
     `;
 
@@ -1518,10 +1521,13 @@ async function showEditMode(id) {
     try { attachments = item.attachments ? JSON.parse(item.attachments) : []; } catch(e) {}
 
     const attachmentsHTML = attachments.map((att, i) => `
-        <div class="attachment-item" data-index="${i}">
-            ${att.type === 'image' ? `<img src="${att.data}" class="attachment-thumb" onclick="viewAttachment(${i})">` :
-              `<div class="attachment-file" onclick="viewAttachment(${i})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="att-name">${esc(att.name || 'PDF')}</span></div>`}
-            <button class="att-remove" onclick="removeAttachment(${i})">&times;</button>
+        <div class="attachment-item-edit" data-index="${i}" style="position:relative;margin-bottom:0.75rem;">
+            ${att.type === 'image' ? `<img src="${att.data}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="viewAttachment(${i})">` :
+              `<div onclick="viewAttachment(${i})" style="display:flex;align-items:center;gap:8px;padding:1rem;background:#f8f8ff;border-radius:8px;cursor:pointer;border:1px solid #e5e5f0;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span style="font-size:0.95rem;color:#333;">${esc(att.name || 'PDF')}</span>
+              </div>`}
+            <button class="att-remove" onclick="removeAttachment(${i})" style="position:absolute;top:8px;right:8px;">&times;</button>
         </div>
     `).join('');
 
@@ -1572,6 +1578,8 @@ async function showEditMode(id) {
                 <textarea class="edit-field" data-field="notes" rows="3" placeholder="Notes">${esc(item.notes || '')}</textarea>
             </div>
 
+            ${item.image ? `<div class="detail-section"><h4>Original Rate Card</h4><img src="${item.image}" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>` : ''}
+
             <div class="detail-section">
                 <h4>Attachments</h4>
                 <div class="attachments-grid" id="modalAttachments">${attachmentsHTML || '<span class="att-empty">No attachments</span>'}</div>
@@ -1581,8 +1589,6 @@ async function showEditMode(id) {
                     <input type="file" id="modalAttachmentInput" accept="image/jpeg,image/png,application/pdf" multiple hidden>
                 </label>
             </div>
-
-            ${item.image ? `<div class="detail-section"><h4>Original Rate Card</h4><img src="${item.image}" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>` : ''}
 
             <div class="modal-edit-actions">
                 <button class="btn primary" id="modalSaveBtn">Save Changes</button>
