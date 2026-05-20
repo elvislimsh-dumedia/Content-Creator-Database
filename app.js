@@ -1533,7 +1533,7 @@ function renderGridCard(item) {
         </div>`;
 }
 
-const ITEMS_PER_PAGE = 25;
+const ITEMS_PER_PAGE = 10;
 let currentPage = 1;
 
 let lastFetchTime = 0;

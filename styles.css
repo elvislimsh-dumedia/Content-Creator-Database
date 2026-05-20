@@ -190,7 +190,7 @@ body {
 
 header {
     text-align: center;
-    padding: 2.5rem 0;
+    padding: 1rem 0;
 }
 
 .page-title {
@@ -206,6 +206,10 @@ header {
     gap: 0;
     margin-bottom: 1.5rem;
     border-bottom: 1px solid #e8e8e8;
+    position: sticky;
+    top: 49px;
+    background: white;
+    z-index: 90;
 }
 
 .tab {
@@ -706,6 +710,11 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
     flex-shrink: 0;
     padding-right: 1.5rem;
     border-right: 1px solid #eee;
+    position: sticky;
+    top: 110px;
+    align-self: flex-start;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
 }
 
 .sidebar-section {
@@ -909,6 +918,10 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 96px;
+    background: white;
+    z-index: 80;
 }
 
 /* List row */
