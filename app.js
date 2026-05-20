@@ -1534,8 +1534,12 @@ async function showEditMode(id) {
     body.innerHTML = `
         <div class="modal-detail modal-edit">
             <div class="modal-header-row">
-                <div class="modal-avatar">
+                <div class="modal-avatar profile-photo-upload" id="profilePhotoUpload" title="Click to change profile photo" style="cursor:pointer;position:relative;">
                     ${item.profile_photo ? `<img src="${item.profile_photo}" alt="${esc(item.name)}">` : esc(getInitials(item.name))}
+                    <div class="photo-upload-overlay">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </div>
+                    <input type="file" id="profilePhotoInput" accept="image/jpeg,image/png" hidden>
                 </div>
                 <div style="flex:1">
                     <input type="text" class="edit-field edit-name" data-field="name" value="${esc(item.name)}" placeholder="Name">
@@ -1602,6 +1606,16 @@ async function showEditMode(id) {
     document.getElementById('modalAttachmentInput').addEventListener('change', e => {
         handleAttachmentUpload(e.target.files, item.id);
     });
+
+    // Profile photo upload
+    document.getElementById('profilePhotoUpload').addEventListener('click', (e) => {
+        if (e.target.closest('.photo-upload-overlay') || e.target.closest('.modal-avatar')) {
+            document.getElementById('profilePhotoInput').click();
+        }
+    });
+    document.getElementById('profilePhotoInput').addEventListener('change', e => {
+        handleProfilePhotoUpload(e.target.files[0], item.id);
+    });
 }
 
 async function handleAttachmentUpload(files, itemId) {
@@ -1633,6 +1647,27 @@ async function handleAttachmentUpload(files, itemId) {
         showEditMode(itemId);
     } catch (err) {
         alert('Failed to upload attachment: ' + err.message);
+    }
+}
+
+async function handleProfilePhotoUpload(file, itemId) {
+    if (!file || !file.type.match(/image\/(jpeg|png)/)) {
+        alert('Please select a JPG or PNG image.');
+        return;
+    }
+    try {
+        const data = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.readAsDataURL(file);
+        });
+        await dbUpdate(itemId, { profile_photo: data });
+        const cachedItem = cachedCatalogue.find(i => String(i.id) === String(itemId));
+        if (cachedItem) cachedItem.profile_photo = data;
+        showEditMode(itemId);
+        renderCatalogue();
+    } catch (err) {
+        alert('Failed to upload profile photo: ' + err.message);
     }
 }
 
