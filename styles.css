@@ -1551,15 +1551,6 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
 }
 .download-btn:hover { background: #e8e0ff; }
 
-.att-download-btn {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background: rgba(255,255,255,0.9);
-    border: 1px solid #ddd;
-    color: #555;
-}
-.att-download-btn:hover { background: #fff; color: #7c5cfc; border-color: #e0d6ff; }
 
 .modal-detail .contact-info {
     background: #f8f8f8;

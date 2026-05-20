@@ -1546,13 +1546,16 @@ async function showDetail(id) {
     try { attachments = item.attachments ? JSON.parse(item.attachments) : []; } catch(e) {}
 
     const viewAttachmentsHTML = attachments.length ? attachments.map((att, i) => `
-        <div class="attachment-view-item" style="margin-bottom:0.75rem;position:relative;">
+        <div class="attachment-view-item" style="margin-bottom:0.75rem;">
+            <div class="section-header-row" style="margin-bottom:0.4rem;">
+                <span style="font-size:0.85rem;color:#666;font-weight:600;">${esc(att.name || (att.type === 'pdf' ? 'PDF Document' : 'Image'))}</span>
+                <button class="download-btn" onclick="event.stopPropagation(); downloadAttachment(${i})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download</button>
+            </div>
             ${att.type === 'image' ? `<img src="${att.data}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="viewAttachment(${i})">` :
               `<div class="attachment-file-view" onclick="viewAttachment(${i})" style="display:flex;align-items:center;gap:8px;padding:1rem;background:#f8f8ff;border-radius:8px;cursor:pointer;border:1px solid #e5e5f0;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span style="font-size:0.95rem;color:#333;">${esc(att.name || 'PDF')}</span>
               </div>`}
-            <button class="download-btn att-download-btn" onclick="event.stopPropagation(); downloadAttachment(${i})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download</button>
         </div>
     `).join('') : '';
 
