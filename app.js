@@ -988,6 +988,8 @@ document.getElementById('influencerForm').addEventListener('submit', async e => 
         await dbInsert(entry);
         document.getElementById('influencerForm').reset();
         document.getElementById('processingSection').classList.add('hidden');
+        document.getElementById('formSection').classList.add('hidden');
+        document.getElementById('extractedText').classList.add('hidden');
         currentImageData = null;
         currentProfilePhoto = null;
         fileInput.value = '';
@@ -1006,6 +1008,8 @@ document.getElementById('influencerForm').addEventListener('submit', async e => 
 document.getElementById('clearForm').addEventListener('click', () => {
     document.getElementById('influencerForm').reset();
     document.getElementById('processingSection').classList.add('hidden');
+    document.getElementById('formSection').classList.add('hidden');
+    document.getElementById('extractedText').classList.add('hidden');
     currentImageData = null;
     currentProfilePhoto = null;
     fileInput.value = '';
