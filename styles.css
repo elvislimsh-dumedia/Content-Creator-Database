@@ -1433,6 +1433,16 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
 
 .modal-detail h2 { margin-bottom: 0.2rem; font-size: 1.3rem; }
 
+.modal-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.modal-detail .modal-header-row { align-items: center; }
+
 .modal-detail .detail-section { margin-top: 1.5rem; }
 
 .modal-detail .detail-section h4 {

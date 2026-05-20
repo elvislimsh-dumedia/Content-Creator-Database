@@ -1344,6 +1344,118 @@ function showDetail(id) {
     const modal = document.getElementById('modal');
     const body = document.getElementById('modalBody');
 
+    const rateRows = [
+        ['IG Story', item.rate_ig_story_min, item.rate_ig_story_max, item.rate_ig_story_notes],
+        ['IG Static Post', item.rate_ig_post_min, item.rate_ig_post_max, item.rate_ig_post_notes],
+        ['IG Carousel', item.rate_ig_carousel_min, item.rate_ig_carousel_max, item.rate_ig_carousel_notes],
+        ['IG Reel', item.rate_ig_reel_min, item.rate_ig_reel_max, item.rate_ig_reel_notes],
+        ['TikTok Video', item.rate_tiktok_video_min, item.rate_tiktok_video_max, item.rate_tiktok_video_notes],
+        ['TikTok Carousel', item.rate_tiktok_carousel_min, item.rate_tiktok_carousel_max, item.rate_tiktok_carousel_notes],
+        ['TikTok Story', item.rate_tiktok_story_min, item.rate_tiktok_story_max, item.rate_tiktok_story_notes],
+        ['Facebook Video', item.rate_fb_video_min, item.rate_fb_video_max, item.rate_fb_video_notes],
+        ['Facebook Photo', item.rate_fb_photo_min, item.rate_fb_photo_max, item.rate_fb_photo_notes],
+        ['YouTube Video', item.rate_yt_video_min, item.rate_yt_video_max, item.rate_yt_video_notes],
+        ['XHS Video', item.rate_xhs_video_min, item.rate_xhs_video_max, item.rate_xhs_video_notes],
+        ['XHS Photo', item.rate_xhs_photo_min, item.rate_xhs_photo_max, item.rate_xhs_photo_notes],
+    ].filter(([, min, max]) => parseRateValue(min) || parseRateValue(max));
+
+    const handles = [
+        ['Instagram', item.handle_ig, item.url_ig],
+        ['TikTok', item.handle_tiktok, item.url_tiktok],
+        ['Facebook', item.handle_fb, item.url_fb],
+        ['YouTube', item.handle_yt, item.url_yt],
+        ['Xiao Hong Shu', item.handle_xhs, item.url_xhs],
+    ].filter(([, v]) => v);
+
+    // Parse attachments for view mode
+    let attachments = [];
+    try { attachments = item.attachments ? JSON.parse(item.attachments) : []; } catch(e) {}
+
+    const viewAttachmentsHTML = attachments.length ? attachments.map((att, i) => `
+        <div class="attachment-item" data-index="${i}">
+            ${att.type === 'image' ? `<img src="${att.data}" class="attachment-thumb" onclick="viewAttachment(${i})">` :
+              `<div class="attachment-file" onclick="viewAttachment(${i})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="att-name">${esc(att.name || 'PDF')}</span></div>`}
+        </div>
+    `).join('') : '';
+
+    body.innerHTML = `
+        <div class="modal-detail">
+            <div class="modal-header-row">
+                <div class="modal-avatar">
+                    ${item.profile_photo ? `<img src="${item.profile_photo}" alt="${esc(item.name)}">` : esc(getInitials(item.name))}
+                </div>
+                <div>
+                    <h2>${esc(item.name)}</h2>
+                    ${item.gender ? `<span style="color:#888;font-size:0.85rem">${esc(item.gender)}</span> &middot; ` : ''}
+                    <span class="card-location">${esc(item.location || '')}</span>
+                </div>
+                <button class="btn secondary btn-sm modal-edit-btn" id="modalEditBtn" style="margin-left:auto">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit
+                </button>
+            </div>
+            ${item.content_style ? `<div class="card-style" style="margin-top:0.5rem">${item.content_style.split(',').map(s => `<span class="tag">${esc(s.trim())}</span>`).join('')}</div>` : ''}
+
+            ${handles.length ? `
+            <div class="detail-section">
+                <h4>Profiles</h4>
+                <div class="detail-grid">
+                    ${handles.map(([label, handle, url]) =>
+                        `<div class="detail-item"><span class="label">${label}</span><span class="value">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="handle-link">${esc(handle)}</a>` : esc(handle)}</span></div>`
+                    ).join('')}
+                </div>
+            </div>` : ''}
+
+            <div class="detail-section">
+                <h4>Followers</h4>
+                <div class="detail-grid">
+                    ${item.ig_followers ? `<div class="detail-item"><span class="label">Instagram</span><span class="value">${esc(item.ig_followers)}</span></div>` : ''}
+                    ${item.tiktok_followers ? `<div class="detail-item"><span class="label">TikTok</span><span class="value">${esc(item.tiktok_followers)}</span></div>` : ''}
+                    ${item.fb_followers ? `<div class="detail-item"><span class="label">Facebook</span><span class="value">${esc(item.fb_followers)}</span></div>` : ''}
+                    ${item.xhs_followers ? `<div class="detail-item"><span class="label">Xiao Hong Shu</span><span class="value">${esc(item.xhs_followers)}</span></div>` : ''}
+                    ${item.yt_followers ? `<div class="detail-item"><span class="label">YouTube</span><span class="value">${esc(item.yt_followers)}</span></div>` : ''}
+                </div>
+            </div>
+
+            ${rateRows.length ? `
+            <div class="detail-section">
+                <h4>Rates (SGD)</h4>
+                <div class="detail-grid">
+                    ${rateRows.map(([label, min, max, notes]) =>
+                        `<div class="detail-item"><span class="label">${label}</span><span class="value">${formatRateRange(min, max)}${notes ? ` <span style="color:#999;font-size:0.8rem">(${esc(notes)})</span>` : ''}</span></div>`
+                    ).join('')}
+                </div>
+            </div>` : ''}
+
+            <div class="detail-section">
+                <h4>Contact</h4>
+                <div class="contact-info">
+                    ${item.email ? `<p><strong>Email:</strong> ${esc(item.email)}</p>` : ''}
+                    ${item.phone ? `<p><strong>Phone:</strong> ${esc(item.phone)}</p>` : ''}
+                </div>
+            </div>
+
+            ${item.notes ? `<div class="detail-section"><h4>Notes</h4><p>${esc(item.notes)}</p></div>` : ''}
+
+            ${viewAttachmentsHTML ? `<div class="detail-section"><h4>Attachments</h4><div class="attachments-grid">${viewAttachmentsHTML}</div></div>` : ''}
+
+            ${item.image ? `<div class="detail-section"><h4>Original Rate Card</h4><img src="${item.image}" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>` : ''}
+        </div>
+    `;
+
+    // Bind edit button
+    document.getElementById('modalEditBtn').addEventListener('click', () => showEditMode(item.id));
+
+    modal.classList.remove('hidden');
+}
+
+function showEditMode(id) {
+    const item = cachedCatalogue.find(i => String(i.id) === String(id));
+    if (!item) return;
+    editingItemId = item.id;
+
+    const body = document.getElementById('modalBody');
+
     const allRateRows = [
         ['IG Story', 'rate_ig_story_min', 'rate_ig_story_max', 'rate_ig_story_notes'],
         ['IG Static Post', 'rate_ig_post_min', 'rate_ig_post_max', 'rate_ig_post_notes'],
@@ -1360,15 +1472,12 @@ function showDetail(id) {
     ];
 
     const rateRowsHTML = allRateRows.map(([label, minKey, maxKey, notesKey]) => {
-        const min = item[minKey] || '';
-        const max = item[maxKey] || '';
-        const notes = item[notesKey] || '';
         return `<div class="edit-rate-row">
             <span class="edit-rate-label">${label}</span>
-            <input type="text" class="edit-rate-input" data-field="${minKey}" value="${esc(min)}" placeholder="Min">
+            <input type="text" class="edit-rate-input" data-field="${minKey}" value="${esc(item[minKey] || '')}" placeholder="Min">
             <span class="rate-sep">-</span>
-            <input type="text" class="edit-rate-input" data-field="${maxKey}" value="${esc(max)}" placeholder="Max">
-            <input type="text" class="edit-rate-notes" data-field="${notesKey}" value="${esc(notes)}" placeholder="Notes">
+            <input type="text" class="edit-rate-input" data-field="${maxKey}" value="${esc(item[maxKey] || '')}" placeholder="Max">
+            <input type="text" class="edit-rate-notes" data-field="${notesKey}" value="${esc(item[notesKey] || '')}" placeholder="Notes">
         </div>`;
     }).join('');
 
@@ -1389,9 +1498,8 @@ function showDetail(id) {
         </div>
     `).join('');
 
-    // Parse existing attachments
     let attachments = [];
-    try { attachments = item.attachments ? JSON.parse(item.attachments) : []; } catch(e) { attachments = []; }
+    try { attachments = item.attachments ? JSON.parse(item.attachments) : []; } catch(e) {}
 
     const attachmentsHTML = attachments.map((att, i) => `
         <div class="attachment-item" data-index="${i}">
@@ -1467,26 +1575,11 @@ function showDetail(id) {
         </div>
     `;
 
-    // Bind save
     document.getElementById('modalSaveBtn').addEventListener('click', () => saveModalEdits(item.id));
-    document.getElementById('modalCancelBtn').addEventListener('click', () => {
-        document.getElementById('modal').classList.add('hidden');
-    });
-
-    // Bind attachment upload
+    document.getElementById('modalCancelBtn').addEventListener('click', () => showDetail(item.id));
     document.getElementById('modalAttachmentInput').addEventListener('change', e => {
         handleAttachmentUpload(e.target.files, item.id);
     });
-
-    modal.classList.remove('hidden');
-}
-
-// Store pending attachment changes
-let pendingAttachments = [];
-
-function showDetail_initAttachments(item) {
-    try { pendingAttachments = item.attachments ? JSON.parse(item.attachments) : []; }
-    catch(e) { pendingAttachments = []; }
 }
 
 async function handleAttachmentUpload(files, itemId) {
@@ -1510,10 +1603,8 @@ async function handleAttachmentUpload(files, itemId) {
     }
 
     await dbUpdate(itemId, { attachments: JSON.stringify(attachments) });
-    // Update cached item
     if (item) item.attachments = JSON.stringify(attachments);
-    // Re-render the modal
-    showDetail(itemId);
+    showEditMode(itemId);
 }
 
 function viewAttachment(index) {
@@ -1540,7 +1631,7 @@ async function removeAttachment(index) {
     attachments.splice(index, 1);
     await dbUpdate(editingItemId, { attachments: JSON.stringify(attachments) });
     item.attachments = JSON.stringify(attachments);
-    showDetail(editingItemId);
+    showEditMode(editingItemId);
 }
 
 async function saveModalEdits(id) {
@@ -1550,11 +1641,9 @@ async function saveModalEdits(id) {
 
     const updates = {};
     document.querySelectorAll('.modal-edit [data-field]').forEach(el => {
-        const field = el.dataset.field;
-        updates[field] = el.value || '';
+        updates[el.dataset.field] = el.value || '';
     });
 
-    // Update follower raw values
     for (const f of ['ig_followers', 'tiktok_followers', 'fb_followers', 'yt_followers', 'xhs_followers']) {
         if (updates[f] !== undefined) {
             updates[f + '_raw'] = String(parseSmartNumber(updates[f]) || '');
@@ -1563,10 +1652,9 @@ async function saveModalEdits(id) {
 
     try {
         await dbUpdate(id, updates);
-        // Update cache
         const item = cachedCatalogue.find(i => String(i.id) === String(id));
         if (item) Object.assign(item, updates);
-        document.getElementById('modal').classList.add('hidden');
+        showDetail(id);
         renderCatalogue();
     } catch (err) {
         alert('Failed to save: ' + err.message);
