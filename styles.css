@@ -978,6 +978,7 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
     font-size: 0.85rem;
     font-weight: 600;
     color: #333;
+    text-align: right;
 }
 
 .row-stat-sub {
@@ -1526,8 +1527,8 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
     border-bottom: 1px solid #f5f5f5;
 }
 
-.modal-detail .detail-item .label { color: #999; font-size: 0.85rem; }
-.modal-detail .detail-item .value { font-weight: 600; font-size: 0.85rem; text-align: right; }
+.modal-detail .detail-item .label { color: #999; font-size: 0.85rem; flex-shrink: 0; }
+.modal-detail .detail-item .value { font-weight: 600; font-size: 0.85rem; text-align: right; flex: 1; }
 
 .modal-detail .contact-info {
     background: #f8f8f8;
@@ -1796,8 +1797,9 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
 
 /* Rate group in list row */
 .rate-group { font-size: 0.75rem; line-height: 1.5; }
+.rate-group > div { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
 .rate-group-label { color: #aaa; font-size: 0.65rem; }
-.rate-group-value { font-weight: 600; color: #333; font-size: 0.8rem; }
+.rate-group-value { font-weight: 600; color: #333; font-size: 0.8rem; text-align: right; }
 
 /* ===================== */
 /* CROP MODAL            */
