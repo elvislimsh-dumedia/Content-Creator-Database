@@ -1533,6 +1533,34 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
 .modal-detail .detail-item .label { color: #999; font-size: 0.85rem; flex-shrink: 0; }
 .modal-detail .detail-item .value { font-weight: 600; font-size: 0.85rem; text-align: right; flex: 1; }
 
+.section-header-row { display: flex; justify-content: space-between; align-items: center; }
+
+.download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #7c5cfc;
+    background: #f4f0ff;
+    border: 1px solid #e0d6ff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.download-btn:hover { background: #e8e0ff; }
+
+.att-download-btn {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid #ddd;
+    color: #555;
+}
+.att-download-btn:hover { background: #fff; color: #7c5cfc; border-color: #e0d6ff; }
+
 .modal-detail .contact-info {
     background: #f8f8f8;
     padding: 1rem;

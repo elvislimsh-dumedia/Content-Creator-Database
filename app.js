@@ -1546,12 +1546,13 @@ async function showDetail(id) {
     try { attachments = item.attachments ? JSON.parse(item.attachments) : []; } catch(e) {}
 
     const viewAttachmentsHTML = attachments.length ? attachments.map((att, i) => `
-        <div class="attachment-view-item" style="margin-bottom:0.75rem;">
+        <div class="attachment-view-item" style="margin-bottom:0.75rem;position:relative;">
             ${att.type === 'image' ? `<img src="${att.data}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="viewAttachment(${i})">` :
               `<div class="attachment-file-view" onclick="viewAttachment(${i})" style="display:flex;align-items:center;gap:8px;padding:1rem;background:#f8f8ff;border-radius:8px;cursor:pointer;border:1px solid #e5e5f0;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span style="font-size:0.95rem;color:#333;">${esc(att.name || 'PDF')}</span>
               </div>`}
+            <button class="download-btn att-download-btn" onclick="event.stopPropagation(); downloadAttachment(${i})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download</button>
         </div>
     `).join('') : '';
 
@@ -1614,7 +1615,7 @@ async function showDetail(id) {
 
             ${item.notes ? `<div class="detail-section"><h4>Notes</h4><p>${esc(item.notes)}</p></div>` : ''}
 
-            ${item.image ? `<div class="detail-section"><h4>Original Rate Card</h4><img src="${item.image}" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>` : ''}
+            ${item.image ? `<div class="detail-section"><div class="section-header-row"><h4>Original Rate Card</h4><button class="download-btn" onclick="downloadRateCard('${item.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download</button></div><img src="${item.image}" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>` : ''}
 
             ${viewAttachmentsHTML ? `<div class="detail-section"><h4>Attachments</h4>${viewAttachmentsHTML}</div>` : ''}
         </div>
@@ -1841,6 +1842,33 @@ async function handleProfilePhotoUpload(file, itemId) {
     } catch (err) {
         alert('Failed to upload profile photo: ' + err.message);
     }
+}
+
+function downloadBase64(dataUrl, filename) {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function downloadRateCard(itemId) {
+    const item = cachedCatalogue.find(i => String(i.id) === String(itemId));
+    if (!item || !item.image) return;
+    const ext = item.image.startsWith('data:image/png') ? 'png' : 'jpg';
+    downloadBase64(item.image, `${(item.name || 'rate-card').replace(/\s+/g, '_')}_rate_card.${ext}`);
+}
+
+function downloadAttachment(index) {
+    const item = cachedCatalogue.find(i => String(i.id) === String(editingItemId));
+    if (!item) return;
+    let attachments = [];
+    try { attachments = JSON.parse(item.attachments); } catch(e) {}
+    const att = attachments[index];
+    if (!att) return;
+    const filename = att.name || (att.type === 'pdf' ? 'attachment.pdf' : 'attachment.jpg');
+    downloadBase64(att.data, filename);
 }
 
 function viewAttachment(index) {
