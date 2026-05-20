@@ -982,7 +982,7 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
     color: #333;
 }
 .row-stat-icon { flex-shrink: 0; width: 18px; }
-.row-stat-count { white-space: nowrap; text-align: right; flex: 1; margin-left: 0.5rem; }
+.row-stat-count { white-space: nowrap; text-align: right; flex: 1; margin-left: 0.2rem; }
 
 .row-stat-sub {
     font-size: 0.7rem;
