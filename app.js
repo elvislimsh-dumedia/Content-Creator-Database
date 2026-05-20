@@ -1252,9 +1252,13 @@ let currentView = 'list';
 
 async function fetchCatalogue() {
     try {
-        cachedCatalogue = await dbGetAll();
+        const freshData = await dbGetAll();
+        if (freshData && freshData.length >= 0) {
+            cachedCatalogue = freshData;
+        }
     } catch {
-        cachedCatalogue = [];
+        // Keep existing cache on network error — don't wipe it
+        console.warn('Failed to fetch catalogue, using cached data');
     }
     return cachedCatalogue;
 }
@@ -1508,20 +1512,30 @@ function renderGridCard(item) {
 const ITEMS_PER_PAGE = 25;
 let currentPage = 1;
 
+let lastFetchTime = 0;
+const FETCH_COOLDOWN = 3000; // Don't re-fetch more than once every 3 seconds
+
 async function renderCatalogue() {
     const container = document.getElementById('catalogueGrid');
     const empty = document.getElementById('emptyState');
     const listHeader = document.querySelector('.list-header');
     const paginationEl = document.getElementById('pagination');
 
-    // Show loading state while fetching
+    // Show loading state on first load only
     if (!cachedCatalogue.length) {
         empty.classList.add('hidden');
         container.innerHTML = '<div style="text-align:center;padding:2rem;color:#999;">Loading...</div>';
     }
 
-    const catalogue = await fetchCatalogue();
-    migratePhoneNumbers(); // one-time SG phone standardization
+    // Only fetch from DB if cache is empty or cooldown has passed
+    const now = Date.now();
+    if (!cachedCatalogue.length || now - lastFetchTime > FETCH_COOLDOWN) {
+        lastFetchTime = now;
+        await fetchCatalogue();
+        migratePhoneNumbers();
+    }
+
+    const catalogue = cachedCatalogue;
 
     const filtered = getFiltered(catalogue);
 
