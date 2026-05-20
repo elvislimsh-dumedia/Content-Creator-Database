@@ -1060,6 +1060,10 @@ function toTitleCase(str) {
 }
 
 function populateForm(data) {
+    // Reset profile photo for new entry
+    currentProfilePhoto = null;
+    document.getElementById('profilePhotoPreview').innerHTML = '<span>+</span>';
+
     const textFields = [
         'name', 'gender', 'content_style', 'email', 'phone', 'location', 'notes',
         'handle_ig', 'handle_tiktok', 'handle_fb', 'handle_yt', 'handle_xhs',
@@ -1836,7 +1840,7 @@ async function showEditMode(id) {
                     <div class="photo-upload-overlay">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     </div>
-                    <input type="file" id="profilePhotoInput" accept="image/jpeg,image/png" hidden>
+                    <input type="file" id="editProfilePhotoInput" accept="image/jpeg,image/png" hidden>
                 </div>
                 <div style="flex:1">
                     <input type="text" class="edit-field edit-name" data-field="name" value="${esc(item.name)}" placeholder="Name">
@@ -1914,10 +1918,10 @@ async function showEditMode(id) {
     // Profile photo upload
     document.getElementById('profilePhotoUpload').addEventListener('click', (e) => {
         if (e.target.closest('.photo-upload-overlay') || e.target.closest('.modal-avatar')) {
-            document.getElementById('profilePhotoInput').click();
+            document.getElementById('editProfilePhotoInput').click();
         }
     });
-    document.getElementById('profilePhotoInput').addEventListener('change', e => {
+    document.getElementById('editProfilePhotoInput').addEventListener('change', e => {
         handleProfilePhotoUpload(e.target.files[0], item.id);
     });
 }
