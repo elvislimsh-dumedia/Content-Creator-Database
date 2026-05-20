@@ -378,6 +378,50 @@ header {
     border-color: #7c5cfc;
 }
 
+/* Phone input with dial code */
+.phone-input-group {
+    display: flex;
+    gap: 0;
+}
+.phone-input-group .dial-code-select {
+    width: 120px;
+    flex-shrink: 0;
+    border-radius: 8px 0 0 8px;
+    border-right: none;
+    padding: 0.55rem 0.4rem;
+    font-size: 0.85rem;
+    background: #f8f8fa;
+    cursor: pointer;
+}
+.phone-input-group input[type="tel"] {
+    flex: 1;
+    border-radius: 0 8px 8px 0;
+    min-width: 0;
+}
+
+/* Edit modal phone input */
+.edit-phone-group {
+    display: flex;
+    gap: 0;
+    flex: 1;
+}
+.edit-phone-group .dial-code-select {
+    width: 120px;
+    flex-shrink: 0;
+    border-radius: 8px 0 0 8px;
+    border: 1px solid #e0e0e0;
+    border-right: none;
+    padding: 0.55rem 0.4rem;
+    font-size: 0.85rem;
+    background: #f8f8fa;
+    cursor: pointer;
+}
+.edit-phone-group input {
+    flex: 1;
+    border-radius: 0 8px 8px 0 !important;
+    min-width: 0;
+}
+
 fieldset {
     grid-column: 1 / -1;
     border: 1px solid #eee;

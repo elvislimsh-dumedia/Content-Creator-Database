@@ -1,4 +1,112 @@
 // =====================
+// COUNTRY DIAL CODES
+// =====================
+const COUNTRY_CODES = [
+    { code: '+65', flag: '\u{1F1F8}\u{1F1EC}', name: 'Singapore' },
+    { code: '+60', flag: '\u{1F1F2}\u{1F1FE}', name: 'Malaysia' },
+    { code: '+62', flag: '\u{1F1EE}\u{1F1E9}', name: 'Indonesia' },
+    { code: '+63', flag: '\u{1F1F5}\u{1F1ED}', name: 'Philippines' },
+    { code: '+66', flag: '\u{1F1F9}\u{1F1ED}', name: 'Thailand' },
+    { code: '+84', flag: '\u{1F1FB}\u{1F1F3}', name: 'Vietnam' },
+    { code: '+673', flag: '\u{1F1E7}\u{1F1F3}', name: 'Brunei' },
+    { code: '+855', flag: '\u{1F1F0}\u{1F1ED}', name: 'Cambodia' },
+    { code: '+856', flag: '\u{1F1F1}\u{1F1E6}', name: 'Laos' },
+    { code: '+95', flag: '\u{1F1F2}\u{1F1F2}', name: 'Myanmar' },
+    { code: '+86', flag: '\u{1F1E8}\u{1F1F3}', name: 'China' },
+    { code: '+852', flag: '\u{1F1ED}\u{1F1F0}', name: 'Hong Kong' },
+    { code: '+853', flag: '\u{1F1F2}\u{1F1F4}', name: 'Macau' },
+    { code: '+886', flag: '\u{1F1F9}\u{1F1FC}', name: 'Taiwan' },
+    { code: '+81', flag: '\u{1F1EF}\u{1F1F5}', name: 'Japan' },
+    { code: '+82', flag: '\u{1F1F0}\u{1F1F7}', name: 'South Korea' },
+    { code: '+91', flag: '\u{1F1EE}\u{1F1F3}', name: 'India' },
+    { code: '+92', flag: '\u{1F1F5}\u{1F1F0}', name: 'Pakistan' },
+    { code: '+94', flag: '\u{1F1F1}\u{1F1F0}', name: 'Sri Lanka' },
+    { code: '+880', flag: '\u{1F1E7}\u{1F1E9}', name: 'Bangladesh' },
+    { code: '+977', flag: '\u{1F1F3}\u{1F1F5}', name: 'Nepal' },
+    { code: '+971', flag: '\u{1F1E6}\u{1F1EA}', name: 'UAE' },
+    { code: '+966', flag: '\u{1F1F8}\u{1F1E6}', name: 'Saudi Arabia' },
+    { code: '+974', flag: '\u{1F1F6}\u{1F1E6}', name: 'Qatar' },
+    { code: '+973', flag: '\u{1F1E7}\u{1F1ED}', name: 'Bahrain' },
+    { code: '+968', flag: '\u{1F1F4}\u{1F1F2}', name: 'Oman' },
+    { code: '+965', flag: '\u{1F1F0}\u{1F1FC}', name: 'Kuwait' },
+    { code: '+962', flag: '\u{1F1EF}\u{1F1F4}', name: 'Jordan' },
+    { code: '+961', flag: '\u{1F1F1}\u{1F1E7}', name: 'Lebanon' },
+    { code: '+972', flag: '\u{1F1EE}\u{1F1F1}', name: 'Israel' },
+    { code: '+90', flag: '\u{1F1F9}\u{1F1F7}', name: 'Turkey' },
+    { code: '+1', flag: '\u{1F1FA}\u{1F1F8}', name: 'USA' },
+    { code: '+1', flag: '\u{1F1E8}\u{1F1E6}', name: 'Canada' },
+    { code: '+52', flag: '\u{1F1F2}\u{1F1FD}', name: 'Mexico' },
+    { code: '+55', flag: '\u{1F1E7}\u{1F1F7}', name: 'Brazil' },
+    { code: '+54', flag: '\u{1F1E6}\u{1F1F7}', name: 'Argentina' },
+    { code: '+56', flag: '\u{1F1E8}\u{1F1F1}', name: 'Chile' },
+    { code: '+57', flag: '\u{1F1E8}\u{1F1F4}', name: 'Colombia' },
+    { code: '+51', flag: '\u{1F1F5}\u{1F1EA}', name: 'Peru' },
+    { code: '+44', flag: '\u{1F1EC}\u{1F1E7}', name: 'UK' },
+    { code: '+353', flag: '\u{1F1EE}\u{1F1EA}', name: 'Ireland' },
+    { code: '+33', flag: '\u{1F1EB}\u{1F1F7}', name: 'France' },
+    { code: '+49', flag: '\u{1F1E9}\u{1F1EA}', name: 'Germany' },
+    { code: '+39', flag: '\u{1F1EE}\u{1F1F9}', name: 'Italy' },
+    { code: '+34', flag: '\u{1F1EA}\u{1F1F8}', name: 'Spain' },
+    { code: '+351', flag: '\u{1F1F5}\u{1F1F9}', name: 'Portugal' },
+    { code: '+31', flag: '\u{1F1F3}\u{1F1F1}', name: 'Netherlands' },
+    { code: '+32', flag: '\u{1F1E7}\u{1F1EA}', name: 'Belgium' },
+    { code: '+41', flag: '\u{1F1E8}\u{1F1ED}', name: 'Switzerland' },
+    { code: '+43', flag: '\u{1F1E6}\u{1F1F9}', name: 'Austria' },
+    { code: '+46', flag: '\u{1F1F8}\u{1F1EA}', name: 'Sweden' },
+    { code: '+47', flag: '\u{1F1F3}\u{1F1F4}', name: 'Norway' },
+    { code: '+45', flag: '\u{1F1E9}\u{1F1F0}', name: 'Denmark' },
+    { code: '+358', flag: '\u{1F1EB}\u{1F1EE}', name: 'Finland' },
+    { code: '+48', flag: '\u{1F1F5}\u{1F1F1}', name: 'Poland' },
+    { code: '+420', flag: '\u{1F1E8}\u{1F1FF}', name: 'Czech Republic' },
+    { code: '+30', flag: '\u{1F1EC}\u{1F1F7}', name: 'Greece' },
+    { code: '+36', flag: '\u{1F1ED}\u{1F1FA}', name: 'Hungary' },
+    { code: '+40', flag: '\u{1F1F7}\u{1F1F4}', name: 'Romania' },
+    { code: '+380', flag: '\u{1F1FA}\u{1F1E6}', name: 'Ukraine' },
+    { code: '+7', flag: '\u{1F1F7}\u{1F1FA}', name: 'Russia' },
+    { code: '+61', flag: '\u{1F1E6}\u{1F1FA}', name: 'Australia' },
+    { code: '+64', flag: '\u{1F1F3}\u{1F1FF}', name: 'New Zealand' },
+    { code: '+27', flag: '\u{1F1FF}\u{1F1E6}', name: 'South Africa' },
+    { code: '+234', flag: '\u{1F1F3}\u{1F1EC}', name: 'Nigeria' },
+    { code: '+254', flag: '\u{1F1F0}\u{1F1EA}', name: 'Kenya' },
+    { code: '+233', flag: '\u{1F1EC}\u{1F1ED}', name: 'Ghana' },
+    { code: '+20', flag: '\u{1F1EA}\u{1F1EC}', name: 'Egypt' },
+    { code: '+212', flag: '\u{1F1F2}\u{1F1E6}', name: 'Morocco' },
+];
+
+function populateDialCodeSelect(selectEl, selectedCode = '+65') {
+    selectEl.innerHTML = COUNTRY_CODES.map(c =>
+        `<option value="${c.code}" ${c.code === selectedCode ? 'selected' : ''}>${c.flag} ${c.code} ${c.name}</option>`
+    ).join('');
+}
+
+// Parse a stored phone number into { dialCode, number }
+function parsePhoneNumber(phone) {
+    if (!phone) return { dialCode: '+65', number: '' };
+    phone = phone.trim();
+    // Try to match a leading dial code
+    for (const c of COUNTRY_CODES) {
+        if (phone.startsWith(c.code + ' ') || phone.startsWith(c.code)) {
+            const num = phone.slice(c.code.length).trim();
+            return { dialCode: c.code, number: num };
+        }
+    }
+    // If it starts with + but doesn't match, keep as-is
+    if (phone.startsWith('+')) {
+        const match = phone.match(/^(\+\d{1,4})\s*(.*)/);
+        if (match) return { dialCode: match[1], number: match[2] };
+    }
+    // No dial code — assume Singapore
+    return { dialCode: '+65', number: phone };
+}
+
+// Format phone: combine dial code + number
+function formatPhoneNumber(dialCode, number) {
+    const cleaned = number.replace(/[^\d]/g, '');
+    if (!cleaned) return '';
+    return dialCode + ' ' + cleaned;
+}
+
+// =====================
 // SESSION AUTH
 // =====================
 
@@ -187,6 +295,9 @@ document.querySelectorAll('.tab').forEach(tab => {
         if (tab.dataset.tab === 'catalogue') renderCatalogue();
     });
 });
+
+// Initialize dial code dropdown
+populateDialCodeSelect(document.getElementById('f_dial_code'), '+65');
 
 // File upload
 const dropZone = document.getElementById('dropZone');
@@ -868,8 +979,16 @@ function populateForm(data) {
 
     for (const field of textFields) {
         const el = document.getElementById('f_' + field);
-        if (el && data[field]) el.value = data[field];
-        else if (el) el.value = '';
+        if (field === 'phone' && data[field]) {
+            // Parse phone into dial code + number
+            const parsed = parsePhoneNumber(data[field]);
+            populateDialCodeSelect(document.getElementById('f_dial_code'), parsed.dialCode);
+            el.value = parsed.number;
+        } else if (el && data[field]) {
+            el.value = data[field];
+        } else if (el) {
+            el.value = '';
+        }
     }
 
     const followerFields = ['ig_followers', 'tiktok_followers', 'fb_followers', 'yt_followers', 'xhs_followers'];
@@ -977,7 +1096,7 @@ document.getElementById('influencerForm').addEventListener('submit', async e => 
         rate_xhs_photo_notes: fval('f_rate_xhs_photo_notes'),
         content_style: fval('f_content_style'),
         email: fval('f_email'),
-        phone: fval('f_phone'),
+        phone: formatPhoneNumber(document.getElementById('f_dial_code').value, fval('f_phone')),
         location: fval('f_location'),
         notes: fval('f_notes'),
         image: currentImageData || '',
@@ -990,6 +1109,7 @@ document.getElementById('influencerForm').addEventListener('submit', async e => 
         document.getElementById('processingSection').classList.add('hidden');
         document.getElementById('formSection').classList.add('hidden');
         document.getElementById('extractedText').classList.add('hidden');
+        populateDialCodeSelect(document.getElementById('f_dial_code'), '+65');
         currentImageData = null;
         currentProfilePhoto = null;
         fileInput.value = '';
@@ -1010,6 +1130,7 @@ document.getElementById('clearForm').addEventListener('click', () => {
     document.getElementById('processingSection').classList.add('hidden');
     document.getElementById('formSection').classList.add('hidden');
     document.getElementById('extractedText').classList.add('hidden');
+    populateDialCodeSelect(document.getElementById('f_dial_code'), '+65');
     currentImageData = null;
     currentProfilePhoto = null;
     fileInput.value = '';
@@ -1032,6 +1153,28 @@ async function fetchCatalogue() {
         cachedCatalogue = [];
     }
     return cachedCatalogue;
+}
+
+// One-time migration: standardize SG phone numbers with +65 prefix
+let phonesMigrated = false;
+async function migratePhoneNumbers() {
+    if (phonesMigrated) return;
+    phonesMigrated = true;
+    for (const item of cachedCatalogue) {
+        if (!item.phone) continue;
+        const phone = item.phone.trim();
+        // Skip if already has a dial code
+        if (phone.startsWith('+')) continue;
+        // SG numbers: 8 digits starting with 6, 8, or 9
+        const digits = phone.replace(/[\s\-()]/g, '');
+        if (/^[689]\d{7}$/.test(digits)) {
+            const formatted = '+65 ' + digits;
+            try {
+                await dbUpdate(item.id, { phone: formatted });
+                item.phone = formatted;
+            } catch(e) { /* skip on error */ }
+        }
+    }
 }
 
 function getSelectedPlatform() {
@@ -1263,6 +1406,7 @@ let currentPage = 1;
 
 async function renderCatalogue() {
     const catalogue = await fetchCatalogue();
+    migratePhoneNumbers(); // one-time SG phone standardization
 
     const container = document.getElementById('catalogueGrid');
     const empty = document.getElementById('emptyState');
@@ -1577,7 +1721,10 @@ async function showEditMode(id) {
                 <h4>Contact</h4>
                 <div class="edit-row-inline">
                     <input type="text" class="edit-field" data-field="email" value="${esc(item.email || '')}" placeholder="Email">
-                    <input type="text" class="edit-field" data-field="phone" value="${esc(item.phone || '')}" placeholder="Phone">
+                    <div class="edit-phone-group">
+                        <select class="dial-code-select" id="editDialCode"></select>
+                        <input type="text" class="edit-field" data-field="phone" id="editPhoneNumber" value="${esc(parsePhoneNumber(item.phone).number)}" placeholder="9123 4567">
+                    </div>
                 </div>
             </div>
 
@@ -1604,6 +1751,10 @@ async function showEditMode(id) {
             </div>
         </div>
     `;
+
+    // Populate edit dial code and set to matching code
+    const editParsed = parsePhoneNumber(item.phone);
+    populateDialCodeSelect(document.getElementById('editDialCode'), editParsed.dialCode);
 
     document.getElementById('modalSaveBtn').addEventListener('click', () => saveModalEdits(item.id));
     document.getElementById('modalCancelBtn').addEventListener('click', () => showDetail(item.id));
@@ -1715,6 +1866,12 @@ async function saveModalEdits(id) {
     document.querySelectorAll('.modal-edit [data-field]').forEach(el => {
         updates[el.dataset.field] = el.value || '';
     });
+
+    // Combine dial code + phone number
+    const editDialCode = document.getElementById('editDialCode');
+    if (editDialCode && updates.phone !== undefined) {
+        updates.phone = formatPhoneNumber(editDialCode.value, updates.phone);
+    }
 
     for (const f of ['ig_followers', 'tiktok_followers', 'fb_followers', 'yt_followers', 'xhs_followers']) {
         if (updates[f] !== undefined) {
