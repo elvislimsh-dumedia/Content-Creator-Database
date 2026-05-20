@@ -1520,13 +1520,14 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
 
 .modal-detail .detail-item {
     display: flex;
-    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
     padding: 0.4rem 0;
     border-bottom: 1px solid #f5f5f5;
 }
 
-.modal-detail .detail-item .label { color: #999; font-size: 0.85rem; }
-.modal-detail .detail-item .value { font-weight: 600; font-size: 0.85rem; }
+.modal-detail .detail-item .label { color: #999; font-size: 0.85rem; min-width: 100px; flex-shrink: 0; }
+.modal-detail .detail-item .value { font-weight: 600; font-size: 0.85rem; text-align: left; }
 
 .modal-detail .contact-info {
     background: #f8f8f8;
