@@ -1333,7 +1333,7 @@ function renderListRow(item) {
             </div>
             <div>
                 ${followers.map(f =>
-                    `<div class="row-stat">${platformIcon(f.key)} ${esc(f.count)}</div>`
+                    `<div class="row-stat"><span class="row-stat-icon">${platformIcon(f.key)}</span><span class="row-stat-count">${esc(f.count)}</span></div>`
                 ).join('')}
                 ${!followers.length ? '<span class="row-stat-sub">-</span>' : ''}
             </div>
