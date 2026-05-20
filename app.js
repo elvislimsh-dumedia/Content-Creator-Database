@@ -2468,6 +2468,110 @@ origTabClick.forEach(tab => {
     });
 });
 
+// =====================
+// STORAGE MIGRATION
+// =====================
+document.getElementById('migrateStorageBtn').addEventListener('click', async () => {
+    const statusEl = document.getElementById('migrateStatus');
+    const btn = document.getElementById('migrateStorageBtn');
+
+    if (!confirm('This will migrate all existing Base64 images to Supabase Storage. Continue?')) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Migrating...';
+    statusEl.textContent = 'Fetching all creators...';
+    statusEl.className = 'backup-warning';
+
+    try {
+        // Fetch ALL data including base64 fields
+        const { data: allCreators, error } = await supabaseClient
+            .from('influencers')
+            .select('*')
+            .order('id', { ascending: true });
+        if (error) throw error;
+
+        let migratedCount = 0;
+        let skippedCount = 0;
+        const total = allCreators.length;
+
+        for (let idx = 0; idx < total; idx++) {
+            const item = allCreators[idx];
+            const updates = {};
+            let changed = false;
+
+            statusEl.textContent = `Processing ${idx + 1} of ${total}: ${item.name || 'Unknown'}...`;
+
+            // Migrate rate card image
+            if (item.image && !isStorageUrl(item.image) && item.image.startsWith('data:')) {
+                try {
+                    const file = base64ToFile(item.image, 'rate_card.jpg');
+                    const compressed = await compressImage(file);
+                    const url = await uploadToStorage(compressed, storagePath(item.id, 'ratecard', 'rate_card.jpg'));
+                    updates.image = url;
+                    changed = true;
+                } catch(e) { console.warn('Failed to migrate rate card for', item.id, e); }
+            }
+
+            // Migrate profile photo
+            if (item.profile_photo && !isStorageUrl(item.profile_photo) && item.profile_photo.startsWith('data:')) {
+                try {
+                    const file = base64ToFile(item.profile_photo, 'profile.jpg');
+                    const compressed = await compressImage(file, 400, 0.85);
+                    const url = await uploadToStorage(compressed, storagePath(item.id, 'profile', 'profile.jpg'));
+                    updates.profile_photo = url;
+                    changed = true;
+                } catch(e) { console.warn('Failed to migrate profile photo for', item.id, e); }
+            }
+
+            // Migrate attachments
+            if (item.attachments) {
+                try {
+                    let attachments = JSON.parse(item.attachments);
+                    let attChanged = false;
+                    for (let ai = 0; ai < attachments.length; ai++) {
+                        const att = attachments[ai];
+                        if (att.data && !att.url) {
+                            try {
+                                const file = base64ToFile(att.data, att.name || 'attachment');
+                                const compressed = await compressImage(file);
+                                const path = storagePath(item.id, 'attachments', att.name || 'attachment');
+                                const url = await uploadToStorage(compressed, path);
+                                att.url = url;
+                                att.path = path;
+                                delete att.data;
+                                attChanged = true;
+                            } catch(e) { console.warn('Failed to migrate attachment', ai, 'for', item.id, e); }
+                        }
+                    }
+                    if (attChanged) {
+                        updates.attachments = JSON.stringify(attachments);
+                        changed = true;
+                    }
+                } catch(e) { /* not valid JSON, skip */ }
+            }
+
+            if (changed) {
+                await dbUpdate(item.id, updates);
+                migratedCount++;
+            } else {
+                skippedCount++;
+            }
+        }
+
+        statusEl.textContent = `Migration complete! ${migratedCount} creators migrated, ${skippedCount} already up to date.`;
+        statusEl.className = 'backup-warning success';
+        // Refresh cache
+        cachedCatalogue = [];
+        renderCatalogue();
+    } catch (err) {
+        statusEl.textContent = 'Migration failed: ' + err.message;
+        statusEl.className = 'backup-warning error';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Start Migration';
+    }
+});
+
 // Initial render
 renderCatalogue();
 loadLastBackupDate();
