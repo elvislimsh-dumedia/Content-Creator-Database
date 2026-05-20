@@ -323,6 +323,7 @@ async function dbInsert(entry) {
         .select()
         .single();
     if (error) throw error;
+    lastFetchTime = 0; // invalidate cache
     return data;
 }
 
@@ -332,6 +333,8 @@ async function dbDelete(id) {
         .delete()
         .eq('id', id);
     if (error) throw error;
+    lastFetchTime = 0; // invalidate cache
+    cachedCatalogue = cachedCatalogue.filter(i => String(i.id) !== String(id));
 }
 
 async function dbGetOne(id) {
@@ -341,6 +344,11 @@ async function dbGetOne(id) {
         .eq('id', id)
         .single();
     if (error) throw error;
+    // Sync fresh data back into cache
+    if (data) {
+        const idx = cachedCatalogue.findIndex(i => String(i.id) === String(id));
+        if (idx >= 0) cachedCatalogue[idx] = data;
+    }
     return data;
 }
 
@@ -352,6 +360,12 @@ async function dbUpdate(id, updates) {
         .select()
         .single();
     if (error) throw error;
+    lastFetchTime = 0; // invalidate cache
+    // Sync fresh data back into cache
+    if (data) {
+        const idx = cachedCatalogue.findIndex(i => String(i.id) === String(id));
+        if (idx >= 0) cachedCatalogue[idx] = data;
+    }
     return data;
 }
 
@@ -1250,7 +1264,8 @@ document.getElementById('clearForm').addEventListener('click', () => {
 let cachedCatalogue = [];
 let currentView = 'list';
 
-async function fetchCatalogue() {
+async function fetchCatalogue(forceRefresh = false) {
+    if (forceRefresh) lastFetchTime = 0;
     try {
         const freshData = await dbGetAll();
         if (freshData && freshData.length >= 0) {
@@ -1261,6 +1276,11 @@ async function fetchCatalogue() {
         console.warn('Failed to fetch catalogue, using cached data');
     }
     return cachedCatalogue;
+}
+
+// Force next renderCatalogue to fetch fresh data
+function invalidateCache() {
+    lastFetchTime = 0;
 }
 
 // One-time migration: standardize SG phone numbers with +65 prefix
