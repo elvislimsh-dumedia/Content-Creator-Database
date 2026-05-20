@@ -292,9 +292,19 @@ document.querySelectorAll('.tab').forEach(tab => {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById(tab.dataset.tab).classList.add('active');
+        localStorage.setItem('duc_active_tab', tab.dataset.tab);
         if (tab.dataset.tab === 'catalogue') renderCatalogue();
     });
 });
+
+// Restore last active tab on page load
+(() => {
+    const savedTab = localStorage.getItem('duc_active_tab');
+    if (savedTab) {
+        const tabBtn = document.querySelector(`.tab[data-tab="${savedTab}"]`);
+        if (tabBtn) tabBtn.click();
+    }
+})();
 
 // Initialize dial code dropdown
 populateDialCodeSelect(document.getElementById('f_dial_code'), '+65');
