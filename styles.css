@@ -204,7 +204,7 @@ header {
 .tabs {
     display: flex;
     gap: 0;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
     border-bottom: 1px solid #e8e8e8;
     position: sticky;
     top: 49px;
@@ -711,9 +711,9 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
     padding-right: 1.5rem;
     border-right: 1px solid #eee;
     position: sticky;
-    top: 110px;
+    top: 90px;
     align-self: flex-start;
-    max-height: calc(100vh - 120px);
+    max-height: calc(100vh - 100px);
     overflow-y: auto;
 }
 
@@ -794,9 +794,13 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.75rem;
+    margin-bottom: 0;
+    padding: 0.75rem 0;
     border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 90px;
+    background: white;
+    z-index: 85;
 }
 
 .result-count {
@@ -919,7 +923,7 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
     letter-spacing: 0.5px;
     border-bottom: 1px solid #eee;
     position: sticky;
-    top: 96px;
+    top: 130px;
     background: white;
     z-index: 80;
 }
