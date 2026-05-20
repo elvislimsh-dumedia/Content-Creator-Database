@@ -236,11 +236,81 @@ loadPendingRequests();
 // Refresh every 30s as fallback
 setInterval(loadPendingRequests, 30000);
 
+// =====================
+// SUPABASE STORAGE HELPERS
+// =====================
+const STORAGE_BUCKET = 'creator-files';
+
+async function uploadToStorage(file, path) {
+    const { data, error } = await supabaseClient.storage
+        .from(STORAGE_BUCKET)
+        .upload(path, file, { cacheControl: '3600', upsert: true });
+    if (error) throw error;
+    const { data: urlData } = supabaseClient.storage
+        .from(STORAGE_BUCKET)
+        .getPublicUrl(path);
+    return urlData.publicUrl;
+}
+
+async function deleteFromStorage(path) {
+    try {
+        await supabaseClient.storage.from(STORAGE_BUCKET).remove([path]);
+    } catch(e) { /* ignore delete errors */ }
+}
+
+// Convert base64 data URL to File object
+function base64ToFile(dataUrl, filename) {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    return new File([u8arr], filename, { type: mime });
+}
+
+// Compress image before upload (returns File)
+function compressImage(file, maxWidth = 1200, quality = 0.8) {
+    return new Promise((resolve) => {
+        // If it's a PDF, skip compression
+        if (file.type === 'application/pdf') { resolve(file); return; }
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            let w = img.naturalWidth, h = img.naturalHeight;
+            if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(blob => {
+                resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+            }, 'image/jpeg', quality);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+        img.src = url;
+    });
+}
+
+// Generate unique storage path
+function storagePath(creatorId, type, filename) {
+    const ts = Date.now();
+    const safe = (filename || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
+    return `${creatorId}/${type}/${ts}_${safe}`;
+}
+
+// Check if a URL is a storage URL (not base64)
+function isStorageUrl(str) {
+    return str && (str.startsWith('http://') || str.startsWith('https://'));
+}
+
 // Supabase API helpers
+const LIGHT_COLUMNS = 'id,name,gender,phone,handle_ig,handle_tiktok,handle_fb,handle_yt,handle_xhs,url_ig,url_tiktok,url_fb,url_yt,url_xhs,ig_followers,tiktok_followers,fb_followers,xhs_followers,yt_followers,ig_followers_raw,tiktok_followers_raw,fb_followers_raw,yt_followers_raw,xhs_followers_raw,rate_ig_story_min,rate_ig_story_max,rate_ig_story_notes,rate_ig_post_min,rate_ig_post_max,rate_ig_post_notes,rate_ig_carousel_min,rate_ig_carousel_max,rate_ig_carousel_notes,rate_ig_reel_min,rate_ig_reel_max,rate_ig_reel_notes,rate_tiktok_video_min,rate_tiktok_video_max,rate_tiktok_video_notes,rate_tiktok_carousel_min,rate_tiktok_carousel_max,rate_tiktok_carousel_notes,rate_tiktok_story_min,rate_tiktok_story_max,rate_tiktok_story_notes,rate_fb_video_min,rate_fb_video_max,rate_fb_video_notes,rate_fb_photo_min,rate_fb_photo_max,rate_fb_photo_notes,rate_yt_video_min,rate_yt_video_max,rate_yt_video_notes,rate_xhs_video_min,rate_xhs_video_max,rate_xhs_video_notes,rate_xhs_photo_min,rate_xhs_photo_max,rate_xhs_photo_notes,content_style,contact,email,location,notes,image,profile_photo,attachments,created';
+
 async function dbGetAll() {
     const { data, error } = await supabaseClient
         .from('influencers')
-        .select('*')
+        .select(LIGHT_COLUMNS)
         .order('created', { ascending: false });
     if (error) throw error;
     return data || [];
@@ -425,8 +495,15 @@ async function processFileForQueue(file) {
     }
 
     const parsed = parseRateCard(text);
-    const entry = buildEntryFromParsed(parsed, imageData);
-    await dbInsert(entry);
+    const entry = buildEntryFromParsed(parsed, null);
+    const saved = await dbInsert(entry);
+    // Upload rate card to storage
+    if (imageData) {
+        const imgFile = base64ToFile(imageData, 'rate_card.jpg');
+        const compressed = await compressImage(imgFile);
+        const url = await uploadToStorage(compressed, storagePath(saved.id, 'ratecard', 'rate_card.jpg'));
+        await dbUpdate(saved.id, { image: url });
+    }
     return entry;
 }
 
@@ -1109,12 +1186,29 @@ document.getElementById('influencerForm').addEventListener('submit', async e => 
         phone: formatPhoneNumber(document.getElementById('f_dial_code').value, fval('f_phone')),
         location: fval('f_location'),
         notes: fval('f_notes'),
-        image: currentImageData || '',
-        profile_photo: currentProfilePhoto || ''
+        image: '',
+        profile_photo: ''
     };
 
     try {
-        await dbInsert(entry);
+        // Insert first to get the ID
+        const saved = await dbInsert(entry);
+        const creatorId = saved.id;
+
+        // Upload rate card image to storage
+        if (currentImageData) {
+            const file = base64ToFile(currentImageData, 'rate_card.jpg');
+            const compressed = await compressImage(file);
+            const url = await uploadToStorage(compressed, storagePath(creatorId, 'ratecard', 'rate_card.jpg'));
+            await dbUpdate(creatorId, { image: url });
+        }
+
+        // Upload profile photo to storage
+        if (currentProfilePhoto) {
+            const file = base64ToFile(currentProfilePhoto, 'profile.jpg');
+            const url = await uploadToStorage(file, storagePath(creatorId, 'profile', 'profile.jpg'));
+            await dbUpdate(creatorId, { profile_photo: url });
+        }
         document.getElementById('influencerForm').reset();
         document.getElementById('processingSection').classList.add('hidden');
         document.getElementById('formSection').classList.add('hidden');
@@ -1551,7 +1645,7 @@ async function showDetail(id) {
                 <span style="font-size:0.85rem;color:#666;font-weight:600;">${esc(att.name || (att.type === 'pdf' ? 'PDF Document' : 'Image'))}</span>
                 <button class="download-btn" onclick="event.stopPropagation(); downloadAttachment(${i})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download</button>
             </div>
-            ${att.type === 'image' ? `<img src="${att.data}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="viewAttachment(${i})">` :
+            ${att.type === 'image' ? `<img src="${att.url || att.data}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="viewAttachment(${i})">` :
               `<div class="attachment-file-view" onclick="viewAttachment(${i})" style="display:flex;align-items:center;gap:8px;padding:1rem;background:#f8f8ff;border-radius:8px;cursor:pointer;border:1px solid #e5e5f0;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span style="font-size:0.95rem;color:#333;">${esc(att.name || 'PDF')}</span>
@@ -1691,7 +1785,7 @@ async function showEditMode(id) {
 
     const attachmentsHTML = attachments.map((att, i) => `
         <div class="attachment-item-edit" data-index="${i}" style="position:relative;margin-bottom:0.75rem;">
-            ${att.type === 'image' ? `<img src="${att.data}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="viewAttachment(${i})">` :
+            ${att.type === 'image' ? `<img src="${att.url || att.data}" style="max-width:100%;border-radius:8px;cursor:pointer;" onclick="viewAttachment(${i})">` :
               `<div onclick="viewAttachment(${i})" style="display:flex;align-items:center;gap:8px;padding:1rem;background:#f8f8ff;border-radius:8px;cursor:pointer;border:1px solid #e5e5f0;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span style="font-size:0.95rem;color:#333;">${esc(att.name || 'PDF')}</span>
@@ -1803,15 +1897,14 @@ async function handleAttachmentUpload(files, itemId) {
 
         for (const file of files) {
             if (!file.type.match(/image\/(jpeg|png)/) && file.type !== 'application/pdf') continue;
-            const data = await new Promise(resolve => {
-                const reader = new FileReader();
-                reader.onload = e => resolve(e.target.result);
-                reader.readAsDataURL(file);
-            });
+            const compressed = await compressImage(file);
+            const path = storagePath(itemId, 'attachments', file.name);
+            const url = await uploadToStorage(compressed, path);
             attachments.push({
                 name: file.name,
                 type: file.type === 'application/pdf' ? 'pdf' : 'image',
-                data: data,
+                url: url,
+                path: path,
                 added: new Date().toISOString()
             });
         }
@@ -1832,14 +1925,11 @@ async function handleProfilePhotoUpload(file, itemId) {
         return;
     }
     try {
-        const data = await new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onload = e => resolve(e.target.result);
-            reader.readAsDataURL(file);
-        });
-        await dbUpdate(itemId, { profile_photo: data });
+        const compressed = await compressImage(file, 400, 0.85);
+        const url = await uploadToStorage(compressed, storagePath(itemId, 'profile', 'profile.jpg'));
+        await dbUpdate(itemId, { profile_photo: url });
         const cachedItem = cachedCatalogue.find(i => String(i.id) === String(itemId));
-        if (cachedItem) cachedItem.profile_photo = data;
+        if (cachedItem) cachedItem.profile_photo = url;
         showEditMode(itemId);
         renderCatalogue();
     } catch (err) {
@@ -1847,20 +1937,37 @@ async function handleProfilePhotoUpload(file, itemId) {
     }
 }
 
-function downloadBase64(dataUrl, filename) {
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+function downloadFile(url, filename) {
+    if (isStorageUrl(url)) {
+        // For storage URLs, fetch and download as blob
+        fetch(url)
+            .then(r => r.blob())
+            .then(blob => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+            })
+            .catch(() => window.open(url, '_blank'));
+    } else {
+        // Legacy base64
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
 }
 
 function downloadRateCard(itemId) {
     const item = cachedCatalogue.find(i => String(i.id) === String(itemId));
     if (!item || !item.image) return;
-    const ext = item.image.startsWith('data:image/png') ? 'png' : 'jpg';
-    downloadBase64(item.image, `${(item.name || 'rate-card').replace(/\s+/g, '_')}_rate_card.${ext}`);
+    const ext = item.image.includes('.png') || item.image.startsWith('data:image/png') ? 'png' : 'jpg';
+    downloadFile(item.image, `${(item.name || 'rate-card').replace(/\s+/g, '_')}_rate_card.${ext}`);
 }
 
 function downloadAttachment(index) {
@@ -1871,7 +1978,8 @@ function downloadAttachment(index) {
     const att = attachments[index];
     if (!att) return;
     const filename = att.name || (att.type === 'pdf' ? 'attachment.pdf' : 'attachment.jpg');
-    downloadBase64(att.data, filename);
+    const src = att.url || att.data;
+    downloadFile(src, filename);
 }
 
 function viewAttachment(index) {
@@ -1882,11 +1990,11 @@ function viewAttachment(index) {
     const att = attachments[index];
     if (!att) return;
 
-    const win = window.open();
+    const src = att.url || att.data; // support both storage URL and legacy base64
     if (att.type === 'image') {
-        win.document.write(`<img src="${att.data}" style="max-width:100%;height:auto;">`);
+        window.open(src, '_blank');
     } else {
-        win.document.write(`<embed src="${att.data}" type="application/pdf" width="100%" height="100%" style="position:fixed;top:0;left:0;width:100%;height:100%">`);
+        window.open(src, '_blank');
     }
 }
 
@@ -1895,7 +2003,11 @@ async function removeAttachment(index) {
         const freshItem = await dbGetOne(editingItemId);
         let attachments = [];
         try { attachments = JSON.parse(freshItem.attachments); } catch(e) {}
-        attachments.splice(index, 1);
+        const removed = attachments.splice(index, 1);
+        // Delete from storage if it has a path
+        if (removed[0] && removed[0].path) {
+            await deleteFromStorage(removed[0].path);
+        }
         await dbUpdate(editingItemId, { attachments: JSON.stringify(attachments) });
         const cachedItem = cachedCatalogue.find(i => String(i.id) === String(editingItemId));
         if (cachedItem) cachedItem.attachments = JSON.stringify(attachments);
