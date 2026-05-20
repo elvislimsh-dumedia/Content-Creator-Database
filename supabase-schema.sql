@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS influencers (
     notes TEXT DEFAULT '',
     image TEXT DEFAULT '',
     profile_photo TEXT DEFAULT '',
+    attachments TEXT DEFAULT '',
     created TIMESTAMPTZ DEFAULT NOW()
 );
 

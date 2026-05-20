@@ -79,9 +79,18 @@
                     <div class="upload-icon">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7c5cfc" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     </div>
-                    <p>Drag & drop a rate card here</p>
-                    <p class="small">or click to browse (JPG, PNG, PDF)</p>
-                    <input type="file" id="fileInput" accept="image/jpeg,image/png,application/pdf" hidden>
+                    <p>Drag & drop rate cards here</p>
+                    <p class="small">or click to browse (JPG, PNG, PDF) — multiple files supported</p>
+                    <input type="file" id="fileInput" accept="image/jpeg,image/png,application/pdf" multiple hidden>
+                </div>
+
+                <!-- Multi-file queue -->
+                <div id="fileQueue" class="file-queue hidden">
+                    <div class="file-queue-header">
+                        <h3 id="fileQueueTitle">Processing files...</h3>
+                        <span class="file-queue-count" id="fileQueueCount"></span>
+                    </div>
+                    <div id="fileQueueList" class="file-queue-list"></div>
                 </div>
 
                 <div id="processingSection" class="hidden">
