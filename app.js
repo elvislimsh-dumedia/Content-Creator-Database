@@ -1415,13 +1415,20 @@ const ITEMS_PER_PAGE = 25;
 let currentPage = 1;
 
 async function renderCatalogue() {
-    const catalogue = await fetchCatalogue();
-    migratePhoneNumbers(); // one-time SG phone standardization
-
     const container = document.getElementById('catalogueGrid');
     const empty = document.getElementById('emptyState');
     const listHeader = document.querySelector('.list-header');
     const paginationEl = document.getElementById('pagination');
+
+    // Show loading state while fetching
+    if (!cachedCatalogue.length) {
+        empty.classList.add('hidden');
+        container.innerHTML = '<div style="text-align:center;padding:2rem;color:#999;">Loading...</div>';
+    }
+
+    const catalogue = await fetchCatalogue();
+    migratePhoneNumbers(); // one-time SG phone standardization
+
     const filtered = getFiltered(catalogue);
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
