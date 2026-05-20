@@ -977,13 +977,12 @@ fieldset legend { font-weight: 600; color: #7c5cfc; padding: 0 0.5rem; font-size
 .row-stat {
     display: flex;
     align-items: baseline;
-    gap: 0.35rem;
     font-size: 0.85rem;
     font-weight: 600;
     color: #333;
 }
-.row-stat-icon { flex-shrink: 0; }
-.row-stat-count { white-space: nowrap; text-align: left; min-width: 45px; }
+.row-stat-icon { flex-shrink: 0; width: 18px; }
+.row-stat-count { white-space: nowrap; text-align: left; margin-left: 0.5rem; }
 
 .row-stat-sub {
     font-size: 0.7rem;
