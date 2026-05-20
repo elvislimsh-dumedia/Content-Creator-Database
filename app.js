@@ -1336,8 +1336,17 @@ function esc(str) {
 
 let editingItemId = null;
 
-function showDetail(id) {
-    const item = cachedCatalogue.find(i => String(i.id) === String(id));
+async function showDetail(id) {
+    // Re-fetch from DB to ensure fresh data (especially attachments)
+    let item;
+    try {
+        item = await dbGetOne(id);
+        // Update cache
+        const idx = cachedCatalogue.findIndex(i => String(i.id) === String(id));
+        if (idx >= 0) cachedCatalogue[idx] = item;
+    } catch(e) {
+        item = cachedCatalogue.find(i => String(i.id) === String(id));
+    }
     if (!item) return;
     editingItemId = item.id;
 
@@ -1449,8 +1458,15 @@ function showDetail(id) {
     modal.classList.remove('hidden');
 }
 
-function showEditMode(id) {
-    const item = cachedCatalogue.find(i => String(i.id) === String(id));
+async function showEditMode(id) {
+    let item;
+    try {
+        item = await dbGetOne(id);
+        const idx = cachedCatalogue.findIndex(i => String(i.id) === String(id));
+        if (idx >= 0) cachedCatalogue[idx] = item;
+    } catch(e) {
+        item = cachedCatalogue.find(i => String(i.id) === String(id));
+    }
     if (!item) return;
     editingItemId = item.id;
 
@@ -1583,28 +1599,35 @@ function showEditMode(id) {
 }
 
 async function handleAttachmentUpload(files, itemId) {
-    const item = cachedCatalogue.find(i => String(i.id) === String(itemId));
-    let attachments = [];
-    try { attachments = item.attachments ? JSON.parse(item.attachments) : []; } catch(e) {}
+    try {
+        // Re-fetch latest from DB
+        const freshItem = await dbGetOne(itemId);
+        let attachments = [];
+        try { attachments = freshItem.attachments ? JSON.parse(freshItem.attachments) : []; } catch(e) {}
 
-    for (const file of files) {
-        if (!file.type.match(/image\/(jpeg|png)/) && file.type !== 'application/pdf') continue;
-        const data = await new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onload = e => resolve(e.target.result);
-            reader.readAsDataURL(file);
-        });
-        attachments.push({
-            name: file.name,
-            type: file.type === 'application/pdf' ? 'pdf' : 'image',
-            data: data,
-            added: new Date().toISOString()
-        });
+        for (const file of files) {
+            if (!file.type.match(/image\/(jpeg|png)/) && file.type !== 'application/pdf') continue;
+            const data = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+            attachments.push({
+                name: file.name,
+                type: file.type === 'application/pdf' ? 'pdf' : 'image',
+                data: data,
+                added: new Date().toISOString()
+            });
+        }
+
+        await dbUpdate(itemId, { attachments: JSON.stringify(attachments) });
+        // Update cache
+        const cachedItem = cachedCatalogue.find(i => String(i.id) === String(itemId));
+        if (cachedItem) cachedItem.attachments = JSON.stringify(attachments);
+        showEditMode(itemId);
+    } catch (err) {
+        alert('Failed to upload attachment: ' + err.message);
     }
-
-    await dbUpdate(itemId, { attachments: JSON.stringify(attachments) });
-    if (item) item.attachments = JSON.stringify(attachments);
-    showEditMode(itemId);
 }
 
 function viewAttachment(index) {
@@ -1624,14 +1647,18 @@ function viewAttachment(index) {
 }
 
 async function removeAttachment(index) {
-    const item = cachedCatalogue.find(i => String(i.id) === String(editingItemId));
-    if (!item) return;
-    let attachments = [];
-    try { attachments = JSON.parse(item.attachments); } catch(e) {}
-    attachments.splice(index, 1);
-    await dbUpdate(editingItemId, { attachments: JSON.stringify(attachments) });
-    item.attachments = JSON.stringify(attachments);
-    showEditMode(editingItemId);
+    try {
+        const freshItem = await dbGetOne(editingItemId);
+        let attachments = [];
+        try { attachments = JSON.parse(freshItem.attachments); } catch(e) {}
+        attachments.splice(index, 1);
+        await dbUpdate(editingItemId, { attachments: JSON.stringify(attachments) });
+        const cachedItem = cachedCatalogue.find(i => String(i.id) === String(editingItemId));
+        if (cachedItem) cachedItem.attachments = JSON.stringify(attachments);
+        showEditMode(editingItemId);
+    } catch (err) {
+        alert('Failed to remove attachment: ' + err.message);
+    }
 }
 
 async function saveModalEdits(id) {
