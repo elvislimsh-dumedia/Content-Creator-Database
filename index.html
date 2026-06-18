@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <title>DU Creatives — Content Creator Database</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -418,7 +418,11 @@
 
         <section id="catalogue" class="tab-content">
             <div class="catalogue-layout">
-                <aside class="filter-sidebar">
+                <button class="filter-toggle-btn" id="filterToggleBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/><circle cx="6" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg>
+                    <span>Filters</span>
+                </button>
+                <aside class="filter-sidebar" id="filterSidebar">
                     <div class="sidebar-section">
                         <label class="sidebar-label">Search</label>
                         <div class="sidebar-search">
@@ -501,40 +505,44 @@
                 </aside>
 
                 <div class="catalogue-main">
-                    <div class="catalogue-toolbar">
-                        <span class="result-count" id="resultCount">0 profiles</span>
-                        <div class="toolbar-right">
-                            <select id="sortBy">
-                                <option value="name">Name</option>
-                                <option value="ig_followers">IG Followers</option>
-                                <option value="tiktok_followers">TikTok Followers</option>
-                                <option value="created">Recently Added</option>
-                            </select>
-                            <div class="view-toggle">
-                                <button class="view-btn active" data-view="list" id="viewList" title="List view">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                                </button>
-                                <button class="view-btn" data-view="grid" id="viewGrid" title="Grid view">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                                </button>
+                    <div class="catalogue-sticky-header">
+                        <div class="catalogue-toolbar">
+                            <span class="result-count" id="resultCount">0 profiles</span>
+                            <div class="toolbar-right">
+                                <select id="sortBy">
+                                    <option value="name">Name</option>
+                                    <option value="ig_followers">IG Followers</option>
+                                    <option value="tiktok_followers">TikTok Followers</option>
+                                    <option value="created">Recently Added</option>
+                                </select>
+                                <div class="view-toggle">
+                                    <button class="view-btn active" data-view="list" id="viewList" title="List view">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                                    </button>
+                                    <button class="view-btn" data-view="grid" id="viewGrid" title="Grid view">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                                    </button>
+                                </div>
+                                <button class="btn secondary btn-sm" id="exportBtn">Export CSV</button>
                             </div>
-                            <button class="btn secondary btn-sm" id="exportBtn">Export CSV</button>
+                        </div>
+
+                        <div class="list-header">
+                            <div class="lh-profile">Profile</div>
+                            <div class="lh-stat">Followers</div>
+                            <div class="lh-stat">Content</div>
+                            <div class="lh-stat lh-stat-ig" data-collapse="ig" title="Click to collapse"><span class="lh-label">IG Rates</span><span class="collapse-chev">&#9662;</span></div>
+                            <div class="lh-stat lh-stat-tt" data-collapse="tt" title="Click to collapse"><span class="lh-label">TT Rates</span><span class="collapse-chev">&#9662;</span></div>
+                            <div class="lh-stat lh-stat-other" data-collapse="other" title="Click to collapse"><span class="lh-label">Other Rates</span><span class="collapse-chev">&#9662;</span></div>
+                            <div class="lh-actions"></div>
                         </div>
                     </div>
 
-                    <div class="list-header">
-                        <div class="lh-profile">Profile</div>
-                        <div class="lh-stat">Followers</div>
-                        <div class="lh-stat">Content</div>
-                        <div class="lh-stat">IG Rates</div>
-                        <div class="lh-stat">TT Rates</div>
-                        <div class="lh-stat">Other Rates</div>
-                        <div class="lh-actions"></div>
-                    </div>
-
-                    <div id="catalogueGrid" class="catalogue-list"></div>
-                    <div id="emptyState" class="empty-state">
-                        <p>No influencers yet. Upload a rate card to get started!</p>
+                    <div class="catalogue-scroll-area">
+                        <div id="catalogueGrid" class="catalogue-list"></div>
+                        <div id="emptyState" class="empty-state">
+                            <p>No influencers yet. Upload a rate card to get started!</p>
+                        </div>
                     </div>
                     <div id="pagination" class="pagination hidden">
                         <button class="page-btn" id="prevPage">

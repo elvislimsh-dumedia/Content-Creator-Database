@@ -1474,13 +1474,13 @@ function renderListRow(item) {
                     ${styles.slice(0, 3).map(s => `<span class="row-tag">${esc(s.trim())}</span>`).join('')}
                 </div>
             </div>
-            <div class="rate-group">
+            <div class="rate-group row-rate-ig">
                 ${igRates.length ? igRates.map(([t, r]) => `<div><span class="rate-group-label">${t}</span> <span class="rate-group-value">${r}</span></div>`).join('') : '-'}
             </div>
-            <div class="rate-group">
+            <div class="rate-group row-rate-tt">
                 ${ttRates.length ? ttRates.map(([t, r]) => `<div><span class="rate-group-label">${t}</span> <span class="rate-group-value">${r}</span></div>`).join('') : '-'}
             </div>
-            <div class="rate-group">
+            <div class="rate-group row-rate-other">
                 ${otherRates.length ? otherRates.map(([t, r]) => `<div><span class="rate-group-label">${t}</span> <span class="rate-group-value">${r}</span></div>`).join('') : '-'}
             </div>
             <div class="row-actions">
@@ -2609,6 +2609,40 @@ document.getElementById('migrateStorageBtn').addEventListener('click', async () 
         btn.textContent = 'Start Migration';
     }
 });
+
+// Filter toggle (mobile/tablet)
+(function() {
+    const btn = document.getElementById('filterToggleBtn');
+    const sidebar = document.getElementById('filterSidebar');
+    if (btn && sidebar) {
+        btn.addEventListener('click', () => {
+            sidebar.classList.toggle('show');
+            btn.classList.toggle('active');
+        });
+    }
+})();
+
+// Collapsible rate columns (IG / TT / Other Rates)
+(function() {
+    const main = document.querySelector('.catalogue-main');
+    if (!main) return;
+    const STORAGE_KEY = 'duc_collapsed_rates';
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    saved.forEach(key => {
+        main.classList.add(`collapse-${key}`);
+        const header = document.querySelector(`.lh-stat[data-collapse="${key}"]`);
+        if (header) header.classList.add('collapsed');
+    });
+    document.querySelectorAll('.lh-stat[data-collapse]').forEach(el => {
+        el.addEventListener('click', () => {
+            const key = el.dataset.collapse;
+            main.classList.toggle(`collapse-${key}`);
+            el.classList.toggle('collapsed');
+            const collapsed = ['ig', 'tt', 'other'].filter(k => main.classList.contains(`collapse-${k}`));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(collapsed));
+        });
+    });
+})();
 
 // Initial render
 renderCatalogue();
