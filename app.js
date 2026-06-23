@@ -305,12 +305,14 @@ function isStorageUrl(str) {
 }
 
 // Supabase API helpers
-const LIGHT_COLUMNS = 'id,name,gender,phone,handle_ig,handle_tiktok,handle_fb,handle_yt,handle_xhs,url_ig,url_tiktok,url_fb,url_yt,url_xhs,ig_followers,tiktok_followers,fb_followers,xhs_followers,yt_followers,ig_followers_raw,tiktok_followers_raw,fb_followers_raw,yt_followers_raw,xhs_followers_raw,rate_ig_story_min,rate_ig_story_max,rate_ig_story_notes,rate_ig_post_min,rate_ig_post_max,rate_ig_post_notes,rate_ig_carousel_min,rate_ig_carousel_max,rate_ig_carousel_notes,rate_ig_reel_min,rate_ig_reel_max,rate_ig_reel_notes,rate_tiktok_video_min,rate_tiktok_video_max,rate_tiktok_video_notes,rate_tiktok_carousel_min,rate_tiktok_carousel_max,rate_tiktok_carousel_notes,rate_tiktok_story_min,rate_tiktok_story_max,rate_tiktok_story_notes,rate_fb_video_min,rate_fb_video_max,rate_fb_video_notes,rate_fb_photo_min,rate_fb_photo_max,rate_fb_photo_notes,rate_yt_video_min,rate_yt_video_max,rate_yt_video_notes,rate_xhs_video_min,rate_xhs_video_max,rate_xhs_video_notes,rate_xhs_photo_min,rate_xhs_photo_max,rate_xhs_photo_notes,content_style,contact,email,location,notes,image,profile_photo,attachments,created';
+// LIST_COLUMNS excludes heavy fields (image, attachments) — those are loaded
+// on-demand via dbGetOne when opening the detail/edit modal.
+const LIST_COLUMNS = 'id,name,gender,phone,handle_ig,handle_tiktok,handle_fb,handle_yt,handle_xhs,url_ig,url_tiktok,url_fb,url_yt,url_xhs,ig_followers,tiktok_followers,fb_followers,xhs_followers,yt_followers,ig_followers_raw,tiktok_followers_raw,fb_followers_raw,yt_followers_raw,xhs_followers_raw,rate_ig_story_min,rate_ig_story_max,rate_ig_story_notes,rate_ig_post_min,rate_ig_post_max,rate_ig_post_notes,rate_ig_carousel_min,rate_ig_carousel_max,rate_ig_carousel_notes,rate_ig_reel_min,rate_ig_reel_max,rate_ig_reel_notes,rate_tiktok_video_min,rate_tiktok_video_max,rate_tiktok_video_notes,rate_tiktok_carousel_min,rate_tiktok_carousel_max,rate_tiktok_carousel_notes,rate_tiktok_story_min,rate_tiktok_story_max,rate_tiktok_story_notes,rate_fb_video_min,rate_fb_video_max,rate_fb_video_notes,rate_fb_photo_min,rate_fb_photo_max,rate_fb_photo_notes,rate_yt_video_min,rate_yt_video_max,rate_yt_video_notes,rate_xhs_video_min,rate_xhs_video_max,rate_xhs_video_notes,rate_xhs_photo_min,rate_xhs_photo_max,rate_xhs_photo_notes,content_style,contact,email,location,notes,profile_photo,created';
 
 async function dbGetAll() {
     const { data, error } = await supabaseClient
         .from('influencers')
-        .select(LIGHT_COLUMNS)
+        .select(LIST_COLUMNS)
         .order('created', { ascending: false });
     if (error) throw error;
     return data || [];
