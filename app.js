@@ -1468,7 +1468,10 @@ function renderListRow(item) {
                 <div>
                     <div class="row-name">${esc(item.name)}</div>
                     ${handleDisplay || (item.email ? `<div class="row-handle">${esc(item.email)}</div>` : '')}
-                    ${item.location ? `<div class="row-location">${esc(item.location)}</div>` : ''}
+                    ${(() => {
+                        const demo = [item.gender, item.race, item.location].filter(Boolean).map(esc).join(' &middot; ');
+                        return demo ? `<div class="row-location">${demo}</div>` : '';
+                    })()}
                 </div>
             </div>
             <div>
