@@ -324,6 +324,7 @@ async function dbInsert(entry) {
         .single();
     if (error) throw error;
     lastFetchTime = 0; // invalidate cache
+    cachedFiltered = null;
     return data;
 }
 
@@ -334,6 +335,7 @@ async function dbDelete(id) {
         .eq('id', id);
     if (error) throw error;
     lastFetchTime = 0; // invalidate cache
+    cachedFiltered = null;
     cachedCatalogue = cachedCatalogue.filter(i => String(i.id) !== String(id));
 }
 
@@ -361,6 +363,7 @@ async function dbUpdate(id, updates) {
         .single();
     if (error) throw error;
     lastFetchTime = 0; // invalidate cache
+    cachedFiltered = null;
     // Sync fresh data back into cache
     if (data) {
         const idx = cachedCatalogue.findIndex(i => String(i.id) === String(id));
@@ -1455,7 +1458,7 @@ function renderListRow(item) {
         <div class="influencer-row" onclick="showDetail('${item.id}')">
             <div class="row-profile">
                 <div class="row-avatar">
-                    ${item.profile_photo ? `<img src="${item.profile_photo}" alt="">` : esc(getInitials(item.name))}
+                    ${item.profile_photo ? `<img src="${item.profile_photo}" alt="" loading="lazy" decoding="async">` : esc(getInitials(item.name))}
                 </div>
                 <div>
                     <div class="row-name">${esc(item.name)}</div>
@@ -1512,7 +1515,7 @@ function renderGridCard(item) {
             </div>
             <div class="card-header">
                 <div class="card-avatar">
-                    ${item.profile_photo ? `<img src="${item.profile_photo}" alt="">` : esc(getInitials(item.name))}
+                    ${item.profile_photo ? `<img src="${item.profile_photo}" alt="" loading="lazy" decoding="async">` : esc(getInitials(item.name))}
                 </div>
                 <div>
                     <div class="card-name">${esc(item.name)}</div>
@@ -1539,6 +1542,33 @@ let currentPage = 1;
 let lastFetchTime = 0;
 const FETCH_COOLDOWN = 3000; // Don't re-fetch more than once every 3 seconds
 
+let cachedFiltered = null;
+function invalidateFilteredCache() { cachedFiltered = null; }
+
+// Fast synchronous re-render for page navigation only (no DB fetch, no re-filter)
+function renderCurrentPage() {
+    if (!cachedFiltered) { renderCatalogue(); return; }
+    const container = document.getElementById('catalogueGrid');
+    const paginationEl = document.getElementById('pagination');
+    const totalPages = Math.max(1, Math.ceil(cachedFiltered.length / ITEMS_PER_PAGE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const pageItems = cachedFiltered.slice(start, start + ITEMS_PER_PAGE);
+    if (currentView === 'list') {
+        container.innerHTML = pageItems.map(renderListRow).join('');
+    } else {
+        container.innerHTML = pageItems.map(renderGridCard).join('');
+    }
+    if (totalPages > 1) {
+        paginationEl.classList.remove('hidden');
+        renderPageNumbers(currentPage, totalPages);
+        document.getElementById('prevPage').disabled = currentPage <= 1;
+        document.getElementById('nextPage').disabled = currentPage >= totalPages;
+    } else {
+        paginationEl.classList.add('hidden');
+    }
+}
+
 async function renderCatalogue() {
     const container = document.getElementById('catalogueGrid');
     const empty = document.getElementById('emptyState');
@@ -1561,7 +1591,8 @@ async function renderCatalogue() {
 
     const catalogue = cachedCatalogue;
 
-    const filtered = getFiltered(catalogue);
+    if (!cachedFiltered) cachedFiltered = getFiltered(catalogue);
+    const filtered = cachedFiltered;
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
     if (currentPage > totalPages) currentPage = totalPages;
@@ -1625,18 +1656,18 @@ function renderPageNumbers(current, total) {
     container.querySelectorAll('.page-num-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const page = parseInt(btn.dataset.page, 10);
-            if (page !== currentPage) { currentPage = page; renderCatalogue(); }
+            if (page !== currentPage) { currentPage = page; renderCurrentPage(); }
         });
     });
 }
 
 document.getElementById('prevPage').addEventListener('click', () => {
-    if (currentPage > 1) { currentPage--; renderCatalogue(); }
+    if (currentPage > 1) { currentPage--; renderCurrentPage(); }
 });
 
 document.getElementById('nextPage').addEventListener('click', () => {
     currentPage++;
-    renderCatalogue();
+    renderCurrentPage();
 });
 
 function parseFollowerCount(str) {
@@ -1722,7 +1753,7 @@ async function showDetail(id) {
         <div class="modal-detail">
             <div class="modal-header-row">
                 <div class="modal-avatar">
-                    ${item.profile_photo ? `<img src="${item.profile_photo}" alt="${esc(item.name)}">` : esc(getInitials(item.name))}
+                    ${item.profile_photo ? `<img src="${item.profile_photo}" alt="${esc(item.name)}" loading="lazy" decoding="async">` : esc(getInitials(item.name))}
                 </div>
                 <div>
                     <h2>${esc(item.name)}</h2>
@@ -1863,7 +1894,7 @@ async function showEditMode(id) {
         <div class="modal-detail modal-edit">
             <div class="modal-header-row">
                 <div class="modal-avatar profile-photo-upload" id="profilePhotoUpload" title="Click to change profile photo" style="cursor:pointer;position:relative;">
-                    ${item.profile_photo ? `<img src="${item.profile_photo}" alt="${esc(item.name)}">` : esc(getInitials(item.name))}
+                    ${item.profile_photo ? `<img src="${item.profile_photo}" alt="${esc(item.name)}" loading="lazy" decoding="async">` : esc(getInitials(item.name))}
                     <div class="photo-upload-overlay">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                     </div>
@@ -2137,11 +2168,13 @@ let searchTimer;
 function debounceRender() {
     clearTimeout(searchTimer);
     currentPage = 1;
+    invalidateFilteredCache();
     searchTimer = setTimeout(renderCatalogue, 250);
 }
 
 function filterChanged() {
     currentPage = 1;
+    invalidateFilteredCache();
     renderCatalogue();
 }
 
@@ -2177,6 +2210,7 @@ document.getElementById('resetFilters').addEventListener('click', () => {
     document.getElementById('filterFollowersMax').value = '';
     document.getElementById('filterRateMin').value = '';
     document.getElementById('filterRateMax').value = '';
+    invalidateFilteredCache();
     renderCatalogue();
 });
 
