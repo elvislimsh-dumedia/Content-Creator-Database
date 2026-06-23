@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS influencers (
     id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     gender TEXT DEFAULT '',
+    race TEXT DEFAULT '',
     phone TEXT DEFAULT '',
     handle_ig TEXT DEFAULT '',
     handle_tiktok TEXT DEFAULT '',

@@ -307,7 +307,7 @@ function isStorageUrl(str) {
 // Supabase API helpers
 // LIST_COLUMNS excludes heavy fields (image, attachments) — those are loaded
 // on-demand via dbGetOne when opening the detail/edit modal.
-const LIST_COLUMNS = 'id,name,gender,phone,handle_ig,handle_tiktok,handle_fb,handle_yt,handle_xhs,url_ig,url_tiktok,url_fb,url_yt,url_xhs,ig_followers,tiktok_followers,fb_followers,xhs_followers,yt_followers,ig_followers_raw,tiktok_followers_raw,fb_followers_raw,yt_followers_raw,xhs_followers_raw,rate_ig_story_min,rate_ig_story_max,rate_ig_story_notes,rate_ig_post_min,rate_ig_post_max,rate_ig_post_notes,rate_ig_carousel_min,rate_ig_carousel_max,rate_ig_carousel_notes,rate_ig_reel_min,rate_ig_reel_max,rate_ig_reel_notes,rate_tiktok_video_min,rate_tiktok_video_max,rate_tiktok_video_notes,rate_tiktok_carousel_min,rate_tiktok_carousel_max,rate_tiktok_carousel_notes,rate_tiktok_story_min,rate_tiktok_story_max,rate_tiktok_story_notes,rate_fb_video_min,rate_fb_video_max,rate_fb_video_notes,rate_fb_photo_min,rate_fb_photo_max,rate_fb_photo_notes,rate_yt_video_min,rate_yt_video_max,rate_yt_video_notes,rate_xhs_video_min,rate_xhs_video_max,rate_xhs_video_notes,rate_xhs_photo_min,rate_xhs_photo_max,rate_xhs_photo_notes,content_style,contact,email,location,notes,profile_photo,created';
+const LIST_COLUMNS = 'id,name,gender,race,phone,handle_ig,handle_tiktok,handle_fb,handle_yt,handle_xhs,url_ig,url_tiktok,url_fb,url_yt,url_xhs,ig_followers,tiktok_followers,fb_followers,xhs_followers,yt_followers,ig_followers_raw,tiktok_followers_raw,fb_followers_raw,yt_followers_raw,xhs_followers_raw,rate_ig_story_min,rate_ig_story_max,rate_ig_story_notes,rate_ig_post_min,rate_ig_post_max,rate_ig_post_notes,rate_ig_carousel_min,rate_ig_carousel_max,rate_ig_carousel_notes,rate_ig_reel_min,rate_ig_reel_max,rate_ig_reel_notes,rate_tiktok_video_min,rate_tiktok_video_max,rate_tiktok_video_notes,rate_tiktok_carousel_min,rate_tiktok_carousel_max,rate_tiktok_carousel_notes,rate_tiktok_story_min,rate_tiktok_story_max,rate_tiktok_story_notes,rate_fb_video_min,rate_fb_video_max,rate_fb_video_notes,rate_fb_photo_min,rate_fb_photo_max,rate_fb_photo_notes,rate_yt_video_min,rate_yt_video_max,rate_yt_video_notes,rate_xhs_video_min,rate_xhs_video_max,rate_xhs_video_notes,rate_xhs_photo_min,rate_xhs_photo_max,rate_xhs_photo_notes,content_style,contact,email,location,notes,profile_photo,created';
 
 async function dbGetAll() {
     const { data, error } = await supabaseClient
@@ -528,7 +528,7 @@ async function processFileForQueue(file) {
 
 function buildEntryFromParsed(data, imageData) {
     const fields = [
-        'name', 'gender', 'content_style', 'email', 'phone', 'location', 'notes',
+        'name', 'gender', 'race', 'content_style', 'email', 'phone', 'location', 'notes',
         'handle_ig', 'handle_tiktok', 'handle_fb', 'handle_yt', 'handle_xhs',
         'url_ig', 'url_tiktok', 'url_fb', 'url_yt', 'url_xhs',
     ];
@@ -1070,7 +1070,7 @@ function populateForm(data) {
     document.getElementById('profilePhotoPreview').innerHTML = '<span>+</span>';
 
     const textFields = [
-        'name', 'gender', 'content_style', 'email', 'phone', 'location', 'notes',
+        'name', 'gender', 'race', 'content_style', 'email', 'phone', 'location', 'notes',
         'handle_ig', 'handle_tiktok', 'handle_fb', 'handle_yt', 'handle_xhs',
         'url_ig', 'url_tiktok', 'url_fb', 'url_yt', 'url_xhs',
         'rate_ig_story_min', 'rate_ig_story_max', 'rate_ig_story_notes',
@@ -1148,6 +1148,7 @@ document.getElementById('influencerForm').addEventListener('submit', async e => 
     const entry = {
         name: fval('f_name'),
         gender: fval('f_gender'),
+        race: fval('f_race'),
         ig_followers: fval('f_ig_followers'),
         tiktok_followers: fval('f_tiktok_followers'),
         fb_followers: fval('f_fb_followers'),
@@ -1323,6 +1324,7 @@ function getFiltered(catalogue) {
     const search = document.getElementById('searchInput').value.toLowerCase();
     const platformFilter = getSelectedPlatform();
     const genderFilter = document.getElementById('filterGender').value;
+    const raceFilter = document.getElementById('filterRace').value;
     const sortBy = document.getElementById('sortBy').value;
     const followersMin = parseFollowerCount(document.getElementById('filterFollowersMin').value);
     const followersMax = parseFollowerCount(document.getElementById('filterFollowersMax').value) || Infinity;
@@ -1335,6 +1337,7 @@ function getFiltered(catalogue) {
         if (search && !searchable.includes(search)) return false;
 
         if (genderFilter && (item.gender || '') !== genderFilter) return false;
+        if (raceFilter && (item.race || '') !== raceFilter) return false;
 
         if (platformFilter === 'instagram' && !item.ig_followers) return false;
         if (platformFilter === 'tiktok' && !item.tiktok_followers) return false;
@@ -1909,6 +1912,16 @@ async function showEditMode(id) {
                             <option value="">Gender</option>
                             <option value="Male" ${item.gender === 'Male' ? 'selected' : ''}>Male</option>
                             <option value="Female" ${item.gender === 'Female' ? 'selected' : ''}>Female</option>
+                            <option value="Non-binary" ${item.gender === 'Non-binary' ? 'selected' : ''}>Non-binary</option>
+                            <option value="Other" ${item.gender === 'Other' ? 'selected' : ''}>Other</option>
+                        </select>
+                        <select class="edit-field edit-small" data-field="race">
+                            <option value="">Race</option>
+                            <option value="Chinese" ${item.race === 'Chinese' ? 'selected' : ''}>Chinese</option>
+                            <option value="Malay" ${item.race === 'Malay' ? 'selected' : ''}>Malay</option>
+                            <option value="Indian" ${item.race === 'Indian' ? 'selected' : ''}>Indian</option>
+                            <option value="Eurasian" ${item.race === 'Eurasian' ? 'selected' : ''}>Eurasian</option>
+                            <option value="Others" ${item.race === 'Others' ? 'selected' : ''}>Others</option>
                         </select>
                         <input type="text" class="edit-field edit-small" data-field="location" value="${esc(item.location || '')}" placeholder="Location">
                     </div>
@@ -2186,6 +2199,7 @@ document.getElementById('filterFollowersMax').addEventListener('input', debounce
 document.getElementById('filterRateMin').addEventListener('input', debounceRender);
 document.getElementById('filterRateMax').addEventListener('input', debounceRender);
 document.getElementById('filterGender').addEventListener('change', filterChanged);
+document.getElementById('filterRace').addEventListener('change', filterChanged);
 document.querySelectorAll('input[name="filterPlatform"]').forEach(r => r.addEventListener('change', filterChanged));
 document.getElementById('sortBy').addEventListener('change', filterChanged);
 
@@ -2207,6 +2221,7 @@ document.getElementById('viewGrid').addEventListener('click', () => {
 document.getElementById('resetFilters').addEventListener('click', () => {
     document.getElementById('searchInput').value = '';
     document.getElementById('filterGender').value = '';
+    document.getElementById('filterRace').value = '';
     document.querySelector('input[name="filterPlatform"][value=""]').checked = true;
     document.getElementById('filterFollowersMin').value = '';
     document.getElementById('filterFollowersMax').value = '';
@@ -2221,13 +2236,13 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     const catalogue = await fetchCatalogue();
     if (!catalogue.length) { alert('No data to export.'); return; }
 
-    const headers = ['Name', 'Gender', 'IG Handle', 'IG URL', 'TikTok Handle', 'TikTok URL',
+    const headers = ['Name', 'Gender', 'Race', 'IG Handle', 'IG URL', 'TikTok Handle', 'TikTok URL',
         'FB Handle', 'YT Handle', 'XHS Handle',
         'IG Followers', 'TikTok Followers', 'FB Followers', 'XHS Followers', 'YT Followers',
         'Content Style', 'IG Story Min', 'IG Story Max', 'IG Post Min', 'IG Post Max',
         'IG Carousel Min', 'IG Carousel Max', 'IG Reel Min', 'IG Reel Max',
         'TikTok Video Min', 'TikTok Video Max', 'Email', 'Phone', 'Location', 'Notes'];
-    const keys = ['name', 'gender', 'handle_ig', 'url_ig', 'handle_tiktok', 'url_tiktok',
+    const keys = ['name', 'gender', 'race', 'handle_ig', 'url_ig', 'handle_tiktok', 'url_tiktok',
         'handle_fb', 'handle_yt', 'handle_xhs',
         'ig_followers', 'tiktok_followers', 'fb_followers', 'xhs_followers', 'yt_followers',
         'content_style', 'rate_ig_story_min', 'rate_ig_story_max', 'rate_ig_post_min', 'rate_ig_post_max',
@@ -2404,7 +2419,7 @@ document.getElementById('quoteExport').addEventListener('click', () => {
 // =====================
 
 const BACKUP_FIELDS = [
-    'name', 'gender', 'phone',
+    'name', 'gender', 'race', 'phone',
     'handle_ig', 'handle_tiktok', 'handle_fb', 'handle_yt', 'handle_xhs',
     'url_ig', 'url_tiktok', 'url_fb', 'url_yt', 'url_xhs',
     'ig_followers', 'tiktok_followers', 'fb_followers', 'xhs_followers', 'yt_followers',
