@@ -1595,12 +1595,39 @@ async function renderCatalogue() {
     // Update pagination
     if (totalPages > 1) {
         paginationEl.classList.remove('hidden');
-        document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+        renderPageNumbers(currentPage, totalPages);
         document.getElementById('prevPage').disabled = currentPage <= 1;
         document.getElementById('nextPage').disabled = currentPage >= totalPages;
     } else {
         paginationEl.classList.add('hidden');
     }
+}
+
+function renderPageNumbers(current, total) {
+    const container = document.getElementById('pageNumbers');
+    const pages = [];
+    if (total <= 7) {
+        for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+        pages.push(1);
+        if (current > 4) pages.push('...');
+        const start = Math.max(2, current - 1);
+        const end = Math.min(total - 1, current + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (current < total - 3) pages.push('...');
+        pages.push(total);
+    }
+    container.innerHTML = pages.map(p => {
+        if (p === '...') return '<span class="page-ellipsis">…</span>';
+        const active = p === current ? ' active' : '';
+        return `<button class="page-num-btn${active}" data-page="${p}">${p}</button>`;
+    }).join('');
+    container.querySelectorAll('.page-num-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const page = parseInt(btn.dataset.page, 10);
+            if (page !== currentPage) { currentPage = page; renderCatalogue(); }
+        });
+    });
 }
 
 document.getElementById('prevPage').addEventListener('click', () => {
