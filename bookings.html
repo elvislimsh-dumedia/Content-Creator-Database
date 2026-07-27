@@ -376,11 +376,10 @@
             await loadBookings();
         })();
 
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
+        document.getElementById('logoutBtn').addEventListener('click', () => {
             const s = localStorage.getItem('duc_booking_session');
             if (s) {
-                const { token } = JSON.parse(s);
-                await supabaseClient.from('booking_sessions').delete().eq('session_token', token).catch(() => {});
+                try { const { token } = JSON.parse(s); supabaseClient.from('booking_sessions').delete().eq('session_token', token); } catch (_) {}
             }
             localStorage.removeItem('duc_booking_session');
             window.location.href = 'book-login.html';
