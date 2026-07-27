@@ -29,18 +29,42 @@
         }
         .logo { width: 160px; height: auto; margin: 0 auto 1.5rem; display: block; }
         h2 { font-size: 1.4rem; font-weight: 700; color: #1a1a1a; text-align: center; margin-bottom: 0.3rem; }
-        .sub { color: #999; font-size: 0.875rem; text-align: center; margin-bottom: 2rem; }
+        .sub { color: #999; font-size: 0.875rem; text-align: center; margin-bottom: 1.75rem; }
+        .badge {
+            display: inline-block; background: linear-gradient(135deg, #f97316, #ec4899);
+            color: white; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.5rem;
+            border-radius: 20px; margin-bottom: 1.5rem; text-align: center; width: 100%;
+        }
+        .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #aaa; margin-bottom: 0.6rem; }
+        .radio-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.1rem; }
+        .radio-option {
+            display: flex; align-items: center; gap: 0.85rem;
+            padding: 0.85rem 1rem; border: 1.5px solid #e5e5e5; border-radius: 12px;
+            cursor: pointer; transition: border-color 0.2s, background 0.2s; user-select: none;
+        }
+        .radio-option:hover { border-color: #ec4899; background: #fff5fb; }
+        .radio-option.selected { border-color: #ec4899; background: #fff5fb; }
+        .radio-dot {
+            width: 20px; height: 20px; border-radius: 50%; border: 2px solid #ddd;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color 0.2s;
+        }
+        .radio-option.selected .radio-dot { border-color: #ec4899; }
+        .radio-dot-inner {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: linear-gradient(135deg, #f97316, #ec4899); opacity: 0; transform: scale(0); transition: opacity 0.15s, transform 0.15s;
+        }
+        .radio-option.selected .radio-dot-inner { opacity: 1; transform: scale(1); }
+        .radio-label { font-size: 0.95rem; font-weight: 600; color: #1a1a1a; }
         .field { position: relative; margin-bottom: 0.85rem; }
         .field svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #ccc; pointer-events: none; }
-        .field input, .field select {
+        .field input {
             width: 100%; padding: 0.85rem 2.8rem; border: 1.5px solid #e5e5e5;
             border-radius: 12px; font-size: 1rem; transition: border-color 0.2s; font-family: inherit;
-            background: white; appearance: none; color: #1a1a1a;
+            background: white; color: #1a1a1a;
         }
-        .field input:focus, .field select:focus { outline: none; border-color: #ec4899; }
+        .field input:focus { outline: none; border-color: #ec4899; }
         .toggle-pw { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #bbb; padding: 2px; }
         .toggle-pw:hover { color: #888; }
-        .name-hint { font-size: 0.78rem; color: #aaa; margin: -0.4rem 0 0.7rem 0.2rem; }
         .login-msg { font-size: 0.85rem; margin-bottom: 0.75rem; display: none; }
         .login-msg.show { display: block; }
         .login-msg.error { color: #ef4444; }
@@ -52,11 +76,6 @@
         }
         .btn:hover { background-position: right center; box-shadow: 0 4px 20px rgba(236,72,153,0.35); }
         .btn:disabled { opacity: 0.7; cursor: not-allowed; }
-        .badge {
-            display: inline-block; background: linear-gradient(135deg, #f97316, #ec4899);
-            color: white; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.5rem;
-            border-radius: 20px; margin-bottom: 1.5rem; text-align: center; width: 100%;
-        }
     </style>
 </head>
 <body>
@@ -65,15 +84,18 @@
         <img src="logo.png" alt="DU Creatives" class="logo">
         <div class="badge">BOOKING PORTAL</div>
         <h2>Schedule a Client Meeting</h2>
-        <p class="sub">Enter your credentials to access the booking system</p>
+        <p class="sub">Select your team and enter your password</p>
         <form id="loginForm">
-            <div class="field">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <select id="nameInput">
-                    <option value="">— Admin (leave blank) —</option>
-                    <option value="DU Creatives">DU Creatives</option>
-                    <option value="Enspire">Enspire</option>
-                </select>
+            <div class="section-label">I am from</div>
+            <div class="radio-group">
+                <div class="radio-option" data-value="DU Creatives" onclick="selectTeam(this)">
+                    <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+                    <span class="radio-label">DU Creatives</span>
+                </div>
+                <div class="radio-option" data-value="Enspire" onclick="selectTeam(this)">
+                    <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+                    <span class="radio-label">Enspire</span>
+                </div>
             </div>
             <div class="field">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -87,6 +109,14 @@
         </form>
     </div>
     <script>
+        let selectedName = '';
+
+        function selectTeam(el) {
+            document.querySelectorAll('.radio-option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedName = el.dataset.value;
+        }
+
         (async () => {
             const s = localStorage.getItem('duc_booking_session');
             if (s) {
@@ -108,7 +138,6 @@
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
             const msg = document.getElementById('loginMsg');
-            const name = document.getElementById('nameInput').value.trim();
             const password = pwInput.value;
 
             btn.disabled = true; btn.textContent = 'Verifying...';
@@ -116,7 +145,7 @@
 
             try {
                 const { data, error } = await supabaseClient.rpc('verify_booking_login', {
-                    pwd: password, uname: name
+                    pwd: password, uname: selectedName
                 });
                 if (error || !data) throw new Error(error?.message || 'Login failed');
                 if (data.error) {
