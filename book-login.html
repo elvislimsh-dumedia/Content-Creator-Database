@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DU Creatives — Booking Portal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f97316 0%, #ec4899 40%, #a855f7 80%, #7c3aed 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.15;
+        }
+        body::before { width: 500px; height: 500px; background: #fff; top: -150px; left: -100px; }
+        body::after { width: 400px; height: 400px; background: #fff; bottom: -100px; right: -80px; }
+
+        .dots {
+            position: absolute;
+            width: 100%; height: 100%;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem 2.5rem;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo { width: 160px; height: auto; margin: 0 auto 1.5rem; display: block; }
+        h2 { font-size: 1.4rem; font-weight: 700; color: #1a1a1a; text-align: center; margin-bottom: 0.3rem; }
+        .sub { color: #999; font-size: 0.875rem; text-align: center; margin-bottom: 2rem; }
+
+        .field { position: relative; margin-bottom: 0.85rem; }
+        .field svg {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #ccc;
+            pointer-events: none;
+        }
+        .field input {
+            width: 100%;
+            padding: 0.85rem 2.8rem;
+            border: 1.5px solid #e5e5e5;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        .field input:focus { outline: none; border-color: #ec4899; }
+
+        .toggle-pw {
+            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; color: #bbb; padding: 2px;
+        }
+        .toggle-pw:hover { color: #888; }
+
+        .name-hint {
+            font-size: 0.78rem;
+            color: #aaa;
+            margin: -0.4rem 0 0.7rem 0.2rem;
+        }
+
+        .login-msg { font-size: 0.85rem; margin-bottom: 0.75rem; display: none; }
+        .login-msg.show { display: block; }
+        .login-msg.error { color: #ef4444; }
+
+        .btn {
+            width: 100%; padding: 0.9rem; border: none; border-radius: 12px;
+            font-size: 1rem; font-weight: 700; color: white; cursor: pointer;
+            background: linear-gradient(90deg, #f97316, #ec4899, #a855f7);
+            background-size: 200% auto;
+            transition: background-position 0.4s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+        .btn:hover { background-position: right center; box-shadow: 0 4px 20px rgba(236,72,153,0.35); }
+        .btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f97316, #ec4899);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="dots"></div>
+    <div class="card">
+        <img src="logo.png" alt="DU Creatives" class="logo">
+        <div class="badge">BOOKING PORTAL</div>
+        <h2>Schedule a Client Meeting</h2>
+        <p class="sub">Enter your credentials to access the booking system</p>
+
+        <form id="loginForm">
+            <div class="field">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <input type="text" id="nameInput" placeholder="Your name (sales team)">
+            </div>
+            <p class="name-hint">Leave blank if logging in as admin</p>
+
+            <div class="field">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <input type="password" id="passwordInput" placeholder="Password" required>
+                <button type="button" class="toggle-pw" id="togglePw">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+            </div>
+
+            <p id="loginMsg" class="login-msg"></p>
+            <button type="submit" class="btn" id="loginBtn">Access Booking Portal</button>
+        </form>
+    </div>
+
+    <script>
+        // If already has a booking session, redirect
+        (async () => {
+            try {
+                const res = await fetch('/api/booking/auth/me');
+                if (res.ok) {
+                    const { role } = await res.json();
+                    window.location.href = '/bookings.html';
+                }
+            } catch (_) {}
+        })();
+
+        const pwInput = document.getElementById('passwordInput');
+        document.getElementById('togglePw').addEventListener('click', () => {
+            pwInput.type = pwInput.type === 'password' ? 'text' : 'password';
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const msg = document.getElementById('loginMsg');
+            const name = document.getElementById('nameInput').value.trim();
+            const password = pwInput.value;
+
+            btn.disabled = true;
+            btn.textContent = 'Verifying...';
+            msg.className = 'login-msg';
+
+            try {
+                const res = await fetch('/api/booking/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, name })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    msg.textContent = data.error || 'Login failed';
+                    msg.className = 'login-msg show error';
+                    pwInput.select();
+                } else {
+                    window.location.href = '/bookings.html';
+                }
+            } catch (err) {
+                msg.textContent = 'Connection error. Please try again.';
+                msg.className = 'login-msg show error';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Access Booking Portal';
+            }
+        });
+    </script>
+</body>
+</html>

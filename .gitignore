@@ -6,11 +6,7 @@ __pycache__/
 *.pyc
 serve.py
 server.rb
-server.py
-wsgi.py
-requirements.txt
 Dockerfile
-render.yaml
 
 # OS
 .DS_Store

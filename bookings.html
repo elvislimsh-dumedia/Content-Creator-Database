@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DU Creatives — Booking Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f7f8fa;
+            min-height: 100vh;
+            color: #1a1a1a;
+        }
+
+        nav {
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+            padding: 0 1.5rem;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 0.75rem; }
+        .nav-logo { height: 32px; width: auto; }
+        .nav-title { font-weight: 700; font-size: 1rem; color: #1a1a1a; }
+
+        .nav-right { display: flex; align-items: center; gap: 0.75rem; }
+
+        .nav-user {
+            font-size: 0.85rem;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .nav-user strong { color: #1a1a1a; }
+
+        .btn-sm {
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1.5px solid #e5e5e5;
+            color: #555;
+        }
+        .btn-outline:hover { border-color: #ccc; color: #333; }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #f97316, #ec4899);
+            border: none;
+            color: white;
+        }
+        .btn-primary:hover { opacity: 0.9; box-shadow: 0 2px 10px rgba(236,72,153,0.3); }
+
+        .page { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+        /* Hero stats bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stat-card .stat-val { font-size: 1.6rem; font-weight: 800; line-height: 1; }
+        .stat-card .stat-lbl { font-size: 0.78rem; color: #888; margin-top: 2px; }
+
+        /* Section */
+        .section { margin-bottom: 2rem; }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: white;
+            background: #ef4444;
+        }
+
+        .badge.amber { background: #f59e0b; }
+        .badge.green { background: #22c55e; }
+        .badge.blue { background: #3b82f6; }
+
+        .empty-state {
+            background: white;
+            border-radius: 14px;
+            padding: 2.5rem;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            color: #bbb;
+            font-size: 0.9rem;
+        }
+        .empty-state svg { opacity: 0.3; margin-bottom: 0.75rem; }
+
+        /* Booking Card */
+        .booking-card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+        .booking-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); }
+
+        .booking-card-header {
+            padding: 1.25rem 1.5rem 1rem;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .booking-client { flex: 1; }
+        .booking-client-name { font-size: 1.05rem; font-weight: 700; color: #1a1a1a; }
+        .booking-client-company { font-size: 0.85rem; color: #888; margin-top: 1px; }
+        .booking-purpose {
+            font-size: 0.82rem;
+            color: #666;
+            margin-top: 0.5rem;
+            line-height: 1.5;
+        }
+        .booking-sales {
+            font-size: 0.78rem;
+            color: #aaa;
+            margin-top: 0.3rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .status-pill.pending { background: #fff7ed; color: #c2410c; }
+        .status-pill.approved { background: #f0fdf4; color: #15803d; }
+        .status-pill.confirmed { background: #f0fdf4; color: #15803d; }
+        .status-pill.declined { background: #fef2f2; color: #b91c1c; }
+        .status-pill.counter_proposed { background: #eff6ff; color: #1d4ed8; }
+
+        /* Slots */
+        .slots-section {
+            padding: 0 1.5rem 1rem;
+        }
+        .slots-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.6rem;
+        }
+        .slots-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .slot-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .slot-num {
+            width: 22px; height: 22px;
+            background: #f3f4f6;
+            border-radius: 50%;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #888;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .slot-dt {
+            font-size: 0.875rem;
+            color: #333;
+        }
+        .slot-choose-btn {
+            margin-left: auto;
+            padding: 0.25rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            border: 1.5px solid #22c55e;
+            color: #22c55e;
+            background: white;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .slot-choose-btn:hover { background: #22c55e; color: white; }
+
+        /* Confirmed slot highlight */
+        .confirmed-slot {
+            margin: 0 1.5rem 1rem;
+            background: #f0fdf4;
+            border: 1.5px solid #bbf7d0;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .confirmed-slot-icon { color: #22c55e; flex-shrink: 0; }
+        .confirmed-slot-label { font-size: 0.75rem; color: #15803d; font-weight: 700; }
+        .confirmed-slot-dt { font-size: 0.9rem; font-weight: 700; color: #15803d; }
+
+        /* Counter slot */
+        .counter-slot {
+            margin: 0 1.5rem 1rem;
+            background: #eff6ff;
+            border: 1.5px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+        }
+        .counter-slot-label { font-size: 0.75rem; color: #1d4ed8; font-weight: 700; margin-bottom: 0.3rem; }
+        .counter-slot-dt { font-size: 0.9rem; font-weight: 700; color: #1d4ed8; margin-bottom: 0.3rem; }
+        .counter-slot-note { font-size: 0.8rem; color: #3b82f6; }
+
+        /* Admin notes */
+        .admin-notes {
+            margin: 0 1.5rem 1rem;
+            font-size: 0.82rem;
+            color: #888;
+            font-style: italic;
+        }
+
+        /* Actions */
+        .card-actions {
+            padding: 0.75rem 1.5rem 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .action-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .action-approve { background: #f0fdf4; border: 1.5px solid #bbf7d0; color: #15803d; }
+        .action-approve:hover { background: #22c55e; border-color: #22c55e; color: white; }
+
+        .action-counter { background: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8; }
+        .action-counter:hover { background: #3b82f6; border-color: #3b82f6; color: white; }
+
+        .action-decline { background: #fef2f2; border: 1.5px solid #fecaca; color: #b91c1c; }
+        .action-decline:hover { background: #ef4444; border-color: #ef4444; color: white; }
+
+        .action-accept { background: #f0fdf4; border: 1.5px solid #bbf7d0; color: #15803d; }
+        .action-accept:hover { background: #22c55e; border-color: #22c55e; color: white; }
+
+        /* Upcoming meetings grid */
+        .meetings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+        }
+
+        .meeting-card {
+            background: white;
+            border-radius: 14px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 4px solid #22c55e;
+        }
+
+        .meeting-card.today { border-left-color: #f97316; }
+
+        .meeting-dt {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #22c55e;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.4rem;
+        }
+
+        .meeting-dt.today { color: #f97316; }
+
+        .meeting-client { font-size: 1rem; font-weight: 700; color: #1a1a1a; }
+        .meeting-company { font-size: 0.82rem; color: #888; margin-top: 1px; }
+        .meeting-sales { font-size: 0.78rem; color: #bbb; margin-top: 0.5rem; }
+
+        /* Modal overlay */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            padding: 1rem;
+            display: none;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; }
+
+        .modal .field { margin-bottom: 1rem; }
+        .modal .field label { display: block; font-size: 0.8rem; font-weight: 600; color: #555; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        .modal .field input, .modal .field textarea {
+            width: 100%; padding: 0.75rem 1rem; border: 1.5px solid #e5e5e5; border-radius: 10px;
+            font-size: 0.95rem; font-family: inherit; color: #1a1a1a;
+        }
+        .modal .field input:focus, .modal .field textarea:focus { outline: none; border-color: #ec4899; }
+        .modal .field textarea { min-height: 80px; resize: vertical; }
+
+        .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: flex-end; }
+
+        .btn-modal-cancel {
+            padding: 0.7rem 1.25rem;
+            border: 1.5px solid #e5e5e5;
+            border-radius: 10px;
+            background: white;
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .btn-modal-confirm {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #f97316, #ec4899);
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .btn-modal-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1a1a1a;
+            color: white;
+            padding: 0.85rem 1.5rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            white-space: nowrap;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { background: #22c55e; }
+        .toast.error { background: #ef4444; }
+
+        .divider { height: 1px; background: #f0f0f0; margin: 0 1.5rem; }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 600px) {
+            .page { padding: 1rem; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .booking-card-header { flex-direction: column; gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-left">
+        <img src="logo.png" alt="DU Creatives" class="nav-logo">
+        <span class="nav-title">Booking Dashboard</span>
+    </div>
+    <div class="nav-right">
+        <span class="nav-user" id="navUser"></span>
+        <button class="btn-sm btn-primary hidden" id="newBookingBtn" onclick="window.location.href='/book.html'">+ New Request</button>
+        <button class="btn-sm btn-outline" id="logoutBtn">Logout</button>
+    </div>
+</nav>
+
+<div class="page">
+    <!-- Stats bar -->
+    <div class="stats-bar" id="statsBar">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fff7ed">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+                <div class="stat-val" id="statPending">—</div>
+                <div class="stat-lbl">Pending</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#f0fdf4">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div>
+                <div class="stat-val" id="statUpcoming">—</div>
+                <div class="stat-lbl">Upcoming</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#eff6ff">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div>
+                <div class="stat-val" id="statTotal">—</div>
+                <div class="stat-lbl">Total</div>
+            </div>
+        </div>
+        <div class="stat-card" id="statCounterCard" style="display:none">
+            <div class="stat-icon" style="background:#eff6ff">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div>
+                <div class="stat-val" id="statCounter">—</div>
+                <div class="stat-lbl">Your Response Needed</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPCOMING MEETINGS -->
+    <div class="section" id="sectionUpcoming">
+        <div class="section-header">
+            <div class="section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Upcoming Meetings
+            </div>
+        </div>
+        <div id="upcomingList" class="meetings-grid">
+            <div class="empty-state">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" display="block" style="margin:0 auto 0.75rem"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                No upcoming meetings yet
+            </div>
+        </div>
+    </div>
+
+    <!-- COUNTER PROPOSED (sales sees this to accept/decline) -->
+    <div class="section hidden" id="sectionCounter">
+        <div class="section-header">
+            <div class="section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span style="color:#3b82f6">Awaiting Your Response</span>
+                <span class="badge blue" id="counterBadge">0</span>
+            </div>
+        </div>
+        <div id="counterList"></div>
+    </div>
+
+    <!-- PENDING REQUESTS (admin sees this) -->
+    <div class="section hidden" id="sectionPending">
+        <div class="section-header">
+            <div class="section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Pending Requests</span>
+                <span class="badge amber" id="pendingBadge">0</span>
+            </div>
+        </div>
+        <div id="pendingList"></div>
+    </div>
+
+    <!-- ALL MY REQUESTS (sales view) / ALL BOOKINGS (admin view) -->
+    <div class="section" id="sectionAll">
+        <div class="section-header">
+            <div class="section-title" id="allTitle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                All Requests
+            </div>
+        </div>
+        <div id="allList"></div>
+    </div>
+</div>
+
+<!-- Counter Propose Modal -->
+<div class="modal-overlay" id="counterModal">
+    <div class="modal">
+        <h3>Suggest a Different Time</h3>
+        <div class="field">
+            <label>Your Proposed Date & Time <span style="color:#ec4899">*</span></label>
+            <input type="datetime-local" id="counterSlotInput">
+        </div>
+        <div class="field">
+            <label>Notes (optional)</label>
+            <textarea id="counterNotesInput" placeholder="e.g. The client is busy on those days, let's try this instead…"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" id="counterCancelBtn">Cancel</button>
+            <button class="btn-modal-confirm" id="counterConfirmBtn">Send Suggestion</button>
+        </div>
+    </div>
+</div>
+
+<!-- Decline Modal -->
+<div class="modal-overlay" id="declineModal">
+    <div class="modal">
+        <h3>Decline Booking Request</h3>
+        <div class="field">
+            <label>Reason (optional)</label>
+            <textarea id="declineNotesInput" placeholder="Let the sales team know why…"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" id="declineCancelBtn">Cancel</button>
+            <button class="btn-modal-confirm" id="declineConfirmBtn" style="background:linear-gradient(90deg,#ef4444,#dc2626)">Decline</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    let currentRole = null;
+    let currentName = null;
+    let allBookings = [];
+    let pendingAction = null; // {bookingId, action, slot?}
+
+    // ─── Auth check ───────────────────────────────────────────
+    async function init() {
+        const res = await fetch('/api/booking/auth/me');
+        if (!res.ok) { window.location.href = '/book-login.html'; return; }
+        const { role, name } = await res.json();
+        currentRole = role;
+        currentName = name;
+
+        document.getElementById('navUser').innerHTML =
+            `Hello, <strong>${name}</strong>`;
+
+        if (role === 'admin') {
+            document.getElementById('allTitle').innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                All Bookings`;
+            document.getElementById('sectionPending').classList.remove('hidden');
+        } else {
+            document.getElementById('newBookingBtn').classList.remove('hidden');
+            document.getElementById('sectionCounter').classList.remove('hidden');
+        }
+
+        await loadBookings();
+    }
+
+    // ─── Load bookings ────────────────────────────────────────
+    async function loadBookings() {
+        const res = await fetch('/api/bookings');
+        if (!res.ok) return;
+        allBookings = await res.json();
+        render();
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────
+    function fmtDt(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        if (isNaN(d)) return iso;
+        return d.toLocaleString('en-MY', {
+            weekday: 'short', day: 'numeric', month: 'short',
+            year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+    }
+
+    function statusPill(status) {
+        const labels = {
+            pending: '⏳ Pending',
+            approved: '✓ Approved',
+            confirmed: '✓ Confirmed',
+            declined: '✗ Declined',
+            counter_proposed: '↩ Counter Proposed',
+        };
+        return `<span class="status-pill ${status}">${labels[status] || status}</span>`;
+    }
+
+    function isUpcoming(slot) {
+        if (!slot) return false;
+        return new Date(slot) > new Date();
+    }
+
+    // ─── Render ───────────────────────────────────────────────
+    function render() {
+        const now = new Date();
+
+        const upcoming = allBookings.filter(b =>
+            (b.status === 'approved' || b.status === 'confirmed') &&
+            isUpcoming(b.confirmed_slot)
+        );
+
+        const pending = allBookings.filter(b => b.status === 'pending');
+        const counterPending = allBookings.filter(b => b.status === 'counter_proposed');
+        const total = allBookings.length;
+
+        // Stats
+        document.getElementById('statPending').textContent = pending.length;
+        document.getElementById('statUpcoming').textContent = upcoming.length;
+        document.getElementById('statTotal').textContent = total;
+
+        if (currentRole === 'sales' && counterPending.length > 0) {
+            document.getElementById('statCounterCard').style.display = 'flex';
+            document.getElementById('statCounter').textContent = counterPending.length;
+        }
+
+        // Upcoming meetings
+        const upEl = document.getElementById('upcomingList');
+        if (upcoming.length === 0) {
+            upEl.innerHTML = `<div class="empty-state">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 0.75rem;display:block"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                No upcoming confirmed meetings yet
+            </div>`;
+        } else {
+            upEl.innerHTML = '';
+            upcoming.sort((a, b) => new Date(a.confirmed_slot) - new Date(b.confirmed_slot));
+            upcoming.forEach(b => {
+                const slotDate = new Date(b.confirmed_slot);
+                const isToday = slotDate.toDateString() === now.toDateString();
+                const card = document.createElement('div');
+                card.className = `meeting-card${isToday ? ' today' : ''}`;
+                card.innerHTML = `
+                    <div class="meeting-dt${isToday ? ' today' : ''}">${isToday ? 'TODAY · ' : ''}${fmtDt(b.confirmed_slot)}</div>
+                    <div class="meeting-client">${esc(b.client_name)}</div>
+                    ${b.client_company ? `<div class="meeting-company">${esc(b.client_company)}</div>` : ''}
+                    ${b.meeting_purpose ? `<div class="meeting-company" style="margin-top:0.4rem;font-size:0.8rem">${esc(b.meeting_purpose)}</div>` : ''}
+                    ${currentRole === 'admin' ? `<div class="meeting-sales">Booked by ${esc(b.sales_name)}</div>` : ''}
+                `;
+                upEl.appendChild(card);
+            });
+        }
+
+        // Pending (admin only)
+        if (currentRole === 'admin') {
+            document.getElementById('pendingBadge').textContent = pending.length;
+            const pEl = document.getElementById('pendingList');
+            if (pending.length === 0) {
+                pEl.innerHTML = `<div class="empty-state">No pending requests</div>`;
+            } else {
+                pEl.innerHTML = '';
+                pending.forEach(b => pEl.appendChild(buildAdminCard(b)));
+            }
+        }
+
+        // Counter proposed (sales only)
+        if (currentRole === 'sales') {
+            document.getElementById('counterBadge').textContent = counterPending.length;
+            const cEl = document.getElementById('counterList');
+            if (counterPending.length === 0) {
+                document.getElementById('sectionCounter').classList.add('hidden');
+            } else {
+                document.getElementById('sectionCounter').classList.remove('hidden');
+                cEl.innerHTML = '';
+                counterPending.forEach(b => cEl.appendChild(buildSalesCounterCard(b)));
+            }
+        }
+
+        // All bookings
+        const aEl = document.getElementById('allList');
+        const nonUpcoming = allBookings.filter(b =>
+            !(b.status === 'approved' || b.status === 'confirmed') || !isUpcoming(b.confirmed_slot)
+        );
+        if (nonUpcoming.length === 0) {
+            aEl.innerHTML = `<div class="empty-state">No other bookings</div>`;
+        } else {
+            aEl.innerHTML = '';
+            nonUpcoming.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            nonUpcoming.forEach(b => {
+                const card = buildSummaryCard(b);
+                aEl.appendChild(card);
+            });
+        }
+    }
+
+    // ─── Card builders ────────────────────────────────────────
+    function esc(s) {
+        return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function buildAdminCard(b) {
+        const div = document.createElement('div');
+        div.className = 'booking-card';
+        div.innerHTML = `
+            <div class="booking-card-header">
+                <div class="booking-client">
+                    <div class="booking-client-name">${esc(b.client_name)}</div>
+                    ${b.client_company ? `<div class="booking-client-company">${esc(b.client_company)}</div>` : ''}
+                    ${b.meeting_purpose ? `<div class="booking-purpose">${esc(b.meeting_purpose)}</div>` : ''}
+                    <div class="booking-sales">Submitted by ${esc(b.sales_name)} · ${fmtDt(b.created_at)}</div>
+                </div>
+                ${statusPill(b.status)}
+            </div>
+            <div class="divider"></div>
+            <div class="slots-section">
+                <div class="slots-label">Proposed Slots — click to approve</div>
+                <div class="slots-list">
+                    ${['slot1','slot2','slot3'].map((s, i) => `
+                        <div class="slot-row">
+                            <div class="slot-num">${i+1}</div>
+                            <div class="slot-dt">${fmtDt(b[s])}</div>
+                            <button class="slot-choose-btn" data-id="${b.id}" data-slot="${s}">Approve</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="card-actions">
+                <button class="action-btn action-counter" data-id="${b.id}" data-action="counter">↩ Suggest Different Time</button>
+                <button class="action-btn action-decline" data-id="${b.id}" data-action="decline">✗ Decline</button>
+            </div>
+        `;
+        return div;
+    }
+
+    function buildSalesCounterCard(b) {
+        const div = document.createElement('div');
+        div.className = 'booking-card';
+        div.innerHTML = `
+            <div class="booking-card-header">
+                <div class="booking-client">
+                    <div class="booking-client-name">${esc(b.client_name)}</div>
+                    ${b.client_company ? `<div class="booking-client-company">${esc(b.client_company)}</div>` : ''}
+                </div>
+                ${statusPill(b.status)}
+            </div>
+            <div class="counter-slot" style="margin-top:0">
+                <div class="counter-slot-label">Admin suggested this time instead:</div>
+                <div class="counter-slot-dt">${fmtDt(b.counter_slot)}</div>
+                ${b.admin_notes ? `<div class="counter-slot-note">"${esc(b.admin_notes)}"</div>` : ''}
+            </div>
+            <div class="card-actions">
+                <button class="action-btn action-accept" data-id="${b.id}" data-action="accept_counter">✓ Accept This Time</button>
+                <button class="action-btn action-decline" data-id="${b.id}" data-action="decline_counter">✗ Decline</button>
+            </div>
+        `;
+        return div;
+    }
+
+    function buildSummaryCard(b) {
+        const div = document.createElement('div');
+        div.className = 'booking-card';
+        let extra = '';
+        if ((b.status === 'approved' || b.status === 'confirmed') && b.confirmed_slot) {
+            extra = `<div class="confirmed-slot" style="margin-top:0">
+                <span class="confirmed-slot-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+                <div><div class="confirmed-slot-label">Confirmed Time</div><div class="confirmed-slot-dt">${fmtDt(b.confirmed_slot)}</div></div>
+            </div>`;
+        } else if (b.status === 'counter_proposed' && currentRole === 'admin') {
+            extra = `<div class="counter-slot" style="margin-top:0">
+                <div class="counter-slot-label">Your counter proposal (awaiting sales response):</div>
+                <div class="counter-slot-dt">${fmtDt(b.counter_slot)}</div>
+            </div>`;
+        } else if (b.status === 'pending' && currentRole === 'admin') {
+            extra = `<div class="slots-section" style="padding-top:0">
+                <div class="slots-label">Proposed Slots</div>
+                <div class="slots-list">
+                    ${['slot1','slot2','slot3'].map((s, i) => `
+                        <div class="slot-row">
+                            <div class="slot-num">${i+1}</div>
+                            <div class="slot-dt">${fmtDt(b[s])}</div>
+                            <button class="slot-choose-btn" data-id="${b.id}" data-slot="${s}">Approve</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+
+        div.innerHTML = `
+            <div class="booking-card-header">
+                <div class="booking-client">
+                    <div class="booking-client-name">${esc(b.client_name)}</div>
+                    ${b.client_company ? `<div class="booking-client-company">${esc(b.client_company)}</div>` : ''}
+                    ${currentRole === 'admin' ? `<div class="booking-sales">By ${esc(b.sales_name)} · ${fmtDt(b.created_at)}</div>` : `<div class="booking-sales">${fmtDt(b.created_at)}</div>`}
+                </div>
+                ${statusPill(b.status)}
+            </div>
+            ${extra}
+        `;
+        return div;
+    }
+
+    // ─── Actions ──────────────────────────────────────────────
+    async function doAction(bookingId, payload) {
+        const res = await fetch(`/api/bookings/${bookingId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Action failed');
+        return data;
+    }
+
+    function showToast(msg, type = '') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = `toast show ${type}`;
+        setTimeout(() => { t.className = 'toast'; }, 3000);
+    }
+
+    // Event delegation for action buttons
+    document.addEventListener('click', async e => {
+        const btn = e.target.closest('[data-action],[data-slot]');
+        if (!btn) return;
+
+        const id = btn.dataset.id;
+        const slot = btn.dataset.slot;
+        const action = btn.dataset.action;
+
+        if (slot) {
+            // Approve a specific slot
+            if (!confirm(`Approve slot ${slot.replace('slot', '')} (${fmtDt(allBookings.find(b=>b.id==id)?.[slot])})?`)) return;
+            try {
+                await doAction(id, { action: 'approve', slot });
+                showToast('Booking approved!', 'success');
+                await loadBookings();
+            } catch (err) { showToast(err.message, 'error'); }
+            return;
+        }
+
+        if (action === 'counter') {
+            pendingAction = { id, action: 'counter' };
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(10, 0, 0, 0);
+            const off = tomorrow.getTimezoneOffset() * 60000;
+            document.getElementById('counterSlotInput').value = new Date(tomorrow - off).toISOString().slice(0, 16);
+            document.getElementById('counterNotesInput').value = '';
+            document.getElementById('counterModal').classList.add('open');
+            return;
+        }
+
+        if (action === 'decline') {
+            pendingAction = { id, action: 'decline' };
+            document.getElementById('declineNotesInput').value = '';
+            document.getElementById('declineModal').classList.add('open');
+            return;
+        }
+
+        if (action === 'accept_counter') {
+            if (!confirm('Accept the suggested meeting time?')) return;
+            try {
+                await doAction(id, { action: 'accept_counter' });
+                showToast('Meeting confirmed!', 'success');
+                await loadBookings();
+            } catch (err) { showToast(err.message, 'error'); }
+            return;
+        }
+
+        if (action === 'decline_counter') {
+            pendingAction = { id, action: 'decline_counter' };
+            document.getElementById('declineModal').classList.add('open');
+            return;
+        }
+    });
+
+    // Counter modal
+    document.getElementById('counterCancelBtn').addEventListener('click', () => {
+        document.getElementById('counterModal').classList.remove('open');
+    });
+    document.getElementById('counterConfirmBtn').addEventListener('click', async () => {
+        const slot = document.getElementById('counterSlotInput').value;
+        if (!slot) { showToast('Please pick a date and time.', 'error'); return; }
+        const btn = document.getElementById('counterConfirmBtn');
+        btn.disabled = true;
+        try {
+            await doAction(pendingAction.id, {
+                action: 'counter',
+                counter_slot: slot,
+                admin_notes: document.getElementById('counterNotesInput').value
+            });
+            document.getElementById('counterModal').classList.remove('open');
+            showToast('Counter proposal sent!', 'success');
+            await loadBookings();
+        } catch (err) { showToast(err.message, 'error'); }
+        btn.disabled = false;
+    });
+
+    // Decline modal
+    document.getElementById('declineCancelBtn').addEventListener('click', () => {
+        document.getElementById('declineModal').classList.remove('open');
+    });
+    document.getElementById('declineConfirmBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('declineConfirmBtn');
+        btn.disabled = true;
+        const action = pendingAction.action === 'decline_counter' ? 'decline_counter' : 'decline';
+        try {
+            await doAction(pendingAction.id, {
+                action,
+                admin_notes: document.getElementById('declineNotesInput').value
+            });
+            document.getElementById('declineModal').classList.remove('open');
+            showToast('Booking declined.', '');
+            await loadBookings();
+        } catch (err) { showToast(err.message, 'error'); }
+        btn.disabled = false;
+    });
+
+    // Close modals on overlay click
+    ['counterModal','declineModal'].forEach(id => {
+        document.getElementById(id).addEventListener('click', e => {
+            if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+        });
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await fetch('/api/booking/auth/logout', { method: 'POST' });
+        window.location.href = '/book-login.html';
+    });
+
+    init();
+</script>
+</body>
+</html>
