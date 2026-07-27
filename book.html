@@ -4,216 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DU Creatives — New Booking Request</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f7f8fa;
-            min-height: 100vh;
-        }
-
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f7f8fa; min-height: 100vh; }
         nav {
-            background: white;
-            border-bottom: 1px solid #f0f0f0;
-            padding: 0 1.5rem;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+            background: white; border-bottom: 1px solid #f0f0f0; padding: 0 1.5rem;
+            height: 60px; display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 8px rgba(0,0,0,0.06);
         }
-
         .nav-left { display: flex; align-items: center; gap: 0.75rem; }
         .nav-logo { height: 32px; width: auto; }
         .nav-title { font-weight: 700; font-size: 1rem; color: #1a1a1a; }
-
-        .nav-right { display: flex; align-items: center; gap: 0.75rem; }
-
         .back-btn {
-            display: flex; align-items: center; gap: 0.4rem;
-            padding: 0.5rem 1rem;
-            border: 1.5px solid #e5e5e5;
-            border-radius: 8px;
-            background: white;
-            font-size: 0.875rem;
-            color: #555;
-            cursor: pointer;
-            font-family: inherit;
-            text-decoration: none;
-            transition: border-color 0.2s, color 0.2s;
+            display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem;
+            border: 1.5px solid #e5e5e5; border-radius: 8px; background: white;
+            font-size: 0.875rem; color: #555; cursor: pointer; font-family: inherit;
+            text-decoration: none; transition: border-color 0.2s, color 0.2s;
         }
         .back-btn:hover { border-color: #ec4899; color: #ec4899; }
-
         .page { max-width: 680px; margin: 0 auto; padding: 2rem 1.5rem; }
-
         .page-header { margin-bottom: 2rem; }
         .page-header h1 { font-size: 1.6rem; font-weight: 800; color: #1a1a1a; margin-bottom: 0.3rem; }
         .page-header p { color: #888; font-size: 0.9rem; }
-
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            margin-bottom: 1.5rem;
-        }
-
-        .card h2 {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .card h2 .icon {
-            width: 28px; height: 28px;
-            background: linear-gradient(135deg, #f97316, #ec4899);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-        }
-
+        .card { background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+        .card h2 { font-size: 1rem; font-weight: 700; color: #1a1a1a; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+        .card h2 .icon { width: 28px; height: 28px; background: linear-gradient(135deg, #f97316, #ec4899); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
         .field-group { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-
         .field { margin-bottom: 1.1rem; }
         .field:last-child { margin-bottom: 0; }
-
-        .field label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 0.4rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
+        .field label { display: block; font-size: 0.8rem; font-weight: 600; color: #555; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
         .field label .req { color: #ec4899; margin-left: 2px; }
-
-        .field input, .field textarea, .field select {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border: 1.5px solid #e5e5e5;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            font-family: inherit;
-            color: #1a1a1a;
-            background: white;
-            transition: border-color 0.2s;
+        .field input, .field textarea {
+            width: 100%; padding: 0.8rem 1rem; border: 1.5px solid #e5e5e5; border-radius: 10px;
+            font-size: 0.95rem; font-family: inherit; color: #1a1a1a; background: white; transition: border-color 0.2s;
         }
-        .field input:focus, .field textarea:focus, .field select:focus {
-            outline: none;
-            border-color: #ec4899;
-        }
+        .field input:focus, .field textarea:focus { outline: none; border-color: #ec4899; }
         .field textarea { resize: vertical; min-height: 80px; }
-
-        .slots-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-
-        .slot-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
+        .slots-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        .slot-item { display: flex; align-items: center; gap: 0.75rem; }
         .slot-label {
-            width: 28px; height: 28px;
-            background: linear-gradient(135deg, #f97316, #ec4899);
-            color: white;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.8rem;
-            font-weight: 700;
-            flex-shrink: 0;
+            width: 28px; height: 28px; background: linear-gradient(135deg, #f97316, #ec4899);
+            color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
         }
-
         .slot-item input[type="datetime-local"] {
-            flex: 1;
-            padding: 0.8rem 1rem;
-            border: 1.5px solid #e5e5e5;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            font-family: inherit;
-            color: #1a1a1a;
+            flex: 1; padding: 0.8rem 1rem; border: 1.5px solid #e5e5e5;
+            border-radius: 10px; font-size: 0.95rem; font-family: inherit; color: #1a1a1a;
         }
-        .slot-item input[type="datetime-local"]:focus {
-            outline: none;
-            border-color: #ec4899;
-        }
-
-        .slot-hint {
-            font-size: 0.78rem;
-            color: #aaa;
-            margin-top: 0.5rem;
-        }
-
-        .submit-row {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: flex-end;
-            margin-top: 1rem;
-        }
-
+        .slot-item input[type="datetime-local"]:focus { outline: none; border-color: #ec4899; }
+        .slot-hint { font-size: 0.78rem; color: #aaa; margin-top: 0.5rem; }
+        .submit-row { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem; }
         .btn-cancel {
-            padding: 0.8rem 1.5rem;
-            border: 1.5px solid #e5e5e5;
-            border-radius: 10px;
-            background: white;
-            font-size: 0.95rem;
-            font-family: inherit;
-            color: #555;
-            cursor: pointer;
-            transition: border-color 0.2s;
+            padding: 0.8rem 1.5rem; border: 1.5px solid #e5e5e5; border-radius: 10px;
+            background: white; font-size: 0.95rem; font-family: inherit; color: #555; cursor: pointer;
         }
         .btn-cancel:hover { border-color: #ccc; }
-
         .btn-submit {
-            padding: 0.8rem 2rem;
-            border: none;
-            border-radius: 10px;
-            background: linear-gradient(90deg, #f97316, #ec4899, #a855f7);
-            background-size: 200% auto;
-            color: white;
-            font-size: 0.95rem;
-            font-weight: 700;
-            font-family: inherit;
-            cursor: pointer;
+            padding: 0.8rem 2rem; border: none; border-radius: 10px;
+            background: linear-gradient(90deg, #f97316, #ec4899, #a855f7); background-size: 200% auto;
+            color: white; font-size: 0.95rem; font-weight: 700; font-family: inherit; cursor: pointer;
             transition: background-position 0.4s, box-shadow 0.2s;
         }
         .btn-submit:hover { background-position: right center; box-shadow: 0 4px 16px rgba(236,72,153,0.35); }
         .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-
         .toast {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #1a1a1a;
-            color: white;
-            padding: 0.85rem 1.5rem;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: transform 0.3s ease;
-            z-index: 1000;
-            white-space: nowrap;
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: #1a1a1a; color: white; padding: 0.85rem 1.5rem; border-radius: 12px;
+            font-size: 0.9rem; font-weight: 500; transition: transform 0.3s ease; z-index: 1000; white-space: nowrap;
         }
         .toast.show { transform: translateX(-50%) translateY(0); }
         .toast.success { background: #22c55e; }
         .toast.error { background: #ef4444; }
-
-        @media (max-width: 600px) {
-            .field-group { grid-template-columns: 1fr; }
-            .page { padding: 1.5rem 1rem; }
-        }
+        @media (max-width: 600px) { .field-group { grid-template-columns: 1fr; } .page { padding: 1.5rem 1rem; } }
     </style>
 </head>
 <body>
@@ -222,27 +86,20 @@
             <img src="logo.png" alt="DU Creatives" class="nav-logo">
             <span class="nav-title">New Booking Request</span>
         </div>
-        <div class="nav-right">
-            <a href="/bookings.html" class="back-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-                Back to Dashboard
-            </a>
-        </div>
+        <a href="bookings.html" class="back-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Dashboard
+        </a>
     </nav>
-
     <div class="page">
         <div class="page-header">
             <h1>Request a Client Meeting</h1>
             <p>Submit your 3 preferred time slots — we'll confirm one soon.</p>
         </div>
-
         <form id="bookingForm">
-            <!-- Client Info -->
             <div class="card">
                 <h2>
-                    <span class="icon">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    </span>
+                    <span class="icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
                     Client Information
                 </h2>
                 <div class="field-group">
@@ -260,112 +117,76 @@
                     <textarea id="meetingPurpose" placeholder="Brief description of what this meeting is about…"></textarea>
                 </div>
             </div>
-
-            <!-- Time Slots -->
             <div class="card">
                 <h2>
-                    <span class="icon">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    </span>
+                    <span class="icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
                     Preferred Time Slots
                 </h2>
                 <div class="slots-grid">
-                    <div class="slot-item">
-                        <div class="slot-label">1</div>
-                        <input type="datetime-local" id="slot1" required>
-                    </div>
-                    <div class="slot-item">
-                        <div class="slot-label">2</div>
-                        <input type="datetime-local" id="slot2" required>
-                    </div>
-                    <div class="slot-item">
-                        <div class="slot-label">3</div>
-                        <input type="datetime-local" id="slot3" required>
-                    </div>
+                    <div class="slot-item"><div class="slot-label">1</div><input type="datetime-local" id="slot1" required></div>
+                    <div class="slot-item"><div class="slot-label">2</div><input type="datetime-local" id="slot2" required></div>
+                    <div class="slot-item"><div class="slot-label">3</div><input type="datetime-local" id="slot3" required></div>
                 </div>
                 <p class="slot-hint">All 3 slots are required. We'll confirm one or suggest an alternative.</p>
             </div>
-
             <div class="submit-row">
-                <button type="button" class="btn-cancel" onclick="window.location.href='/bookings.html'">Cancel</button>
+                <button type="button" class="btn-cancel" onclick="window.location.href='bookings.html'">Cancel</button>
                 <button type="submit" class="btn-submit" id="submitBtn">Submit Booking Request</button>
             </div>
         </form>
     </div>
-
     <div class="toast" id="toast"></div>
-
     <script>
-        // Auth check
+        let currentName = '';
+
         (async () => {
-            const res = await fetch('/api/booking/auth/me');
-            if (!res.ok) { window.location.href = '/book-login.html'; return; }
-            const { role } = await res.json();
-            if (role !== 'sales') { window.location.href = '/bookings.html'; }
+            const s = localStorage.getItem('duc_booking_session');
+            if (!s) { window.location.href = 'book-login.html'; return; }
+            const { token, role } = JSON.parse(s);
+            const { data } = await supabaseClient.rpc('check_booking_session', { tok: token });
+            if (!data?.valid) { localStorage.removeItem('duc_booking_session'); window.location.href = 'book-login.html'; return; }
+            if (role !== 'sales') { window.location.href = 'bookings.html'; return; }
+            currentName = data.name;
         })();
 
-        // Set default datetime to tomorrow at 10am
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(10, 0, 0, 0);
-        const toLocal = d => {
-            const off = d.getTimezoneOffset() * 60000;
-            return new Date(d - off).toISOString().slice(0, 16);
-        };
+        const toLocal = d => { const off = d.getTimezoneOffset() * 60000; return new Date(d - off).toISOString().slice(0, 16); };
+        const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(10, 0, 0, 0);
         document.getElementById('slot1').value = toLocal(tomorrow);
-        const d2 = new Date(tomorrow); d2.setDate(d2.getDate() + 1);
-        document.getElementById('slot2').value = toLocal(d2);
-        const d3 = new Date(tomorrow); d3.setDate(d3.getDate() + 2);
-        document.getElementById('slot3').value = toLocal(d3);
+        const d2 = new Date(tomorrow); d2.setDate(d2.getDate() + 1); document.getElementById('slot2').value = toLocal(d2);
+        const d3 = new Date(tomorrow); d3.setDate(d3.getDate() + 2); document.getElementById('slot3').value = toLocal(d3);
 
         function showToast(msg, type = '') {
             const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = `toast show ${type}`;
+            t.textContent = msg; t.className = `toast show ${type}`;
             setTimeout(() => { t.className = 'toast'; }, 3500);
         }
 
         document.getElementById('bookingForm').addEventListener('submit', async e => {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
-
             const slot1 = document.getElementById('slot1').value;
             const slot2 = document.getElementById('slot2').value;
             const slot3 = document.getElementById('slot3').value;
 
-            const slots = [slot1, slot2, slot3];
-            const unique = new Set(slots);
-            if (unique.size < 3) {
-                showToast('Please pick 3 different time slots.', 'error');
-                return;
-            }
+            if (new Set([slot1, slot2, slot3]).size < 3) { showToast('Please pick 3 different time slots.', 'error'); return; }
 
-            btn.disabled = true;
-            btn.textContent = 'Submitting…';
-
+            btn.disabled = true; btn.textContent = 'Submitting…';
             try {
-                const res = await fetch('/api/bookings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        client_name: document.getElementById('clientName').value.trim(),
-                        client_company: document.getElementById('clientCompany').value.trim(),
-                        meeting_purpose: document.getElementById('meetingPurpose').value.trim(),
-                        slot1, slot2, slot3
-                    })
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    showToast(data.error || 'Failed to submit. Please try again.', 'error');
-                } else {
-                    showToast('Booking request submitted!', 'success');
-                    setTimeout(() => { window.location.href = '/bookings.html'; }, 1200);
-                }
+                const { error } = await supabaseClient.from('bookings').insert([{
+                    sales_name: currentName,
+                    client_name: document.getElementById('clientName').value.trim(),
+                    client_company: document.getElementById('clientCompany').value.trim(),
+                    meeting_purpose: document.getElementById('meetingPurpose').value.trim(),
+                    slot1, slot2, slot3,
+                    status: 'pending'
+                }]);
+                if (error) throw error;
+                showToast('Booking request submitted!', 'success');
+                setTimeout(() => { window.location.href = 'bookings.html'; }, 1200);
             } catch (err) {
-                showToast('Connection error. Please try again.', 'error');
+                showToast(err.message || 'Failed to submit. Please try again.', 'error');
             } finally {
-                btn.disabled = false;
-                btn.textContent = 'Submit Booking Request';
+                btn.disabled = false; btn.textContent = 'Submit Booking Request';
             }
         });
     </script>
