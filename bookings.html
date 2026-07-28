@@ -109,6 +109,13 @@
         .loading { padding: 3rem 1.5rem; text-align: center; color: #bbb; font-size: 0.9rem; }
         .spinner { display: inline-block; width: 24px; height: 24px; border: 2.5px solid #e5e5e5; border-top-color: #ec4899; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-delete {
+            width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid #fee2e2;
+            background: white; color: #f87171; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: 0.15s; flex-shrink: 0;
+        }
+        .btn-delete:hover { background: #fee2e2; border-color: #ef4444; color: #b91c1c; }
+        .row-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
         .toast {
             position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
             background: #1a1a1a; color: white; padding: 0.85rem 1.5rem; border-radius: 12px;
@@ -224,6 +231,14 @@
             await loadBookings();
         }
 
+        async function deleteBooking(id, clientName) {
+            if (!confirm(`Delete booking for "${clientName}"? This cannot be undone.`)) return;
+            const { error } = await supabaseClient.from('bookings').delete().eq('id', id);
+            if (error) { showToast(error.message, 'error'); return; }
+            showToast('Booking deleted.', 'success');
+            await loadBookings();
+        }
+
         async function salesAction(id, action) {
             const updates = { updated_at: new Date().toISOString() };
             if (action === 'confirm_counter') {
@@ -282,7 +297,10 @@
                     ${b.meeting_purpose ? `<div class="booking-purpose">${b.meeting_purpose}</div>` : ''}
                     ${slotsHtml}${extraHtml}${actionsHtml}
                 </div>
-                ${badgeHtml(b.status)}
+                <div class="row-right">
+                    ${badgeHtml(b.status)}
+                    <button class="btn-delete" onclick="deleteBooking(${b.id},'${b.client_name.replace(/'/g,"\\'")}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+                </div>
             </div>`;
         }
 
@@ -316,7 +334,10 @@
                     ${b.meeting_purpose ? `<div class="booking-purpose">${b.meeting_purpose}</div>` : ''}
                     ${slotsHtml}${extraHtml}${actionsHtml}
                 </div>
-                ${badgeHtml(b.status)}
+                <div class="row-right">
+                    ${badgeHtml(b.status)}
+                    <button class="btn-delete" onclick="deleteBooking(${b.id},'${b.client_name.replace(/'/g,"\\'")}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+                </div>
             </div>`;
         }
 
