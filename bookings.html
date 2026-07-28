@@ -218,7 +218,7 @@
             } else if (action === 'decline') {
                 updates.status = 'declined';
                 updates.admin_notes = document.getElementById(`notes-${id}`)?.value || '';
-            } else if (action === 'counter') {
+            } else if (action === 'counter' || action === 'recounter') {
                 const cs = document.getElementById(`counter-dt-${id}`)?.value;
                 if (!cs) { showToast('Please pick a counter date/time.', 'error'); return; }
                 updates.status = 'counter_proposed';
@@ -288,6 +288,16 @@
                         <button class="btn-action btn-approve" onclick="adminAction(${b.id},'approve')">✓ Approve Selected Slot</button>
                         <button class="btn-action btn-counter" onclick="adminAction(${b.id},'counter')">↔ Suggest Counter</button>
                         <button class="btn-action btn-decline" onclick="adminAction(${b.id},'decline')">✕ Decline</button>
+                    </div>`;
+            } else if (b.status === 'declined' && b.counter_slot) {
+                actionsHtml = `
+                    <div style="margin-top:0.85rem;padding:0.85rem 1rem;background:#fafafa;border-radius:10px;border:1.5px solid #f0f0f0;">
+                        <div style="font-size:0.78rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.6rem;">Suggest a new counter date</div>
+                        <input type="datetime-local" class="counter-input" id="counter-dt-${b.id}" style="width:100%;margin-bottom:0.5rem;">
+                        <textarea id="notes-${b.id}" class="counter-input" style="width:100%;min-height:60px;resize:vertical;" placeholder="Notes for the sales team (optional)…"></textarea>
+                        <div class="action-row" style="margin-top:0.6rem;">
+                            <button class="btn-action btn-counter" onclick="adminAction(${b.id},'recounter')">↔ Send New Counter</button>
+                        </div>
                     </div>`;
             }
             return `<div class="booking-row">
