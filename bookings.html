@@ -365,8 +365,15 @@
             if (b.admin_notes) {
                 extraHtml += `<div class="notes-display">Admin note: ${b.admin_notes}</div>`;
             }
-            if (['approved','confirmed'].includes(b.status) && b.meeting_link) {
-                extraHtml += `<a class="btn-join" href="${b.meeting_link}" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.82v6.36a1 1 0 0 1-1.447.89L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>Join Meeting</a>`;
+            if (['approved','confirmed'].includes(b.status)) {
+                extraHtml += `<div class="meeting-link-wrap">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="flex-shrink:0"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    <input class="meeting-link-input" id="mlink-${b.id}" type="url" placeholder="Paste Zoom / Meet / Teams link…" value="${b.meeting_link || ''}">
+                    <button class="btn-save-link" onclick="saveMeetingLink(${b.id})">Save</button>
+                </div>`;
+                if (b.meeting_link) {
+                    extraHtml += `<a class="btn-join" href="${b.meeting_link}" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.82v6.36a1 1 0 0 1-1.447.89L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>Join Meeting</a>`;
+                }
             }
             let actionsHtml = '';
             if (showCounterActions && b.status === 'counter_proposed') {
