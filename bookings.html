@@ -109,6 +109,23 @@
         .loading { padding: 3rem 1.5rem; text-align: center; color: #bbb; font-size: 0.9rem; }
         .spinner { display: inline-block; width: 24px; height: 24px; border: 2.5px solid #e5e5e5; border-top-color: #ec4899; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .meeting-link-wrap { margin-top: 0.85rem; display: flex; gap: 0.5rem; align-items: center; }
+        .meeting-link-input {
+            flex: 1; padding: 0.6rem 0.85rem; border: 1.5px solid #e5e5e5; border-radius: 8px;
+            font-size: 0.85rem; font-family: inherit; color: #1a1a1a;
+        }
+        .meeting-link-input:focus { outline: none; border-color: #3b82f6; }
+        .btn-save-link {
+            padding: 0.6rem 1rem; border: none; border-radius: 8px; background: #3b82f6;
+            color: white; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap;
+        }
+        .btn-save-link:hover { background: #2563eb; }
+        .btn-join {
+            display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.6rem;
+            padding: 0.45rem 1rem; border-radius: 8px; background: #eff6ff; color: #2563eb;
+            font-size: 0.82rem; font-weight: 600; text-decoration: none; border: 1.5px solid #bfdbfe;
+        }
+        .btn-join:hover { background: #dbeafe; }
         .btn-delete {
             width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid #fee2e2;
             background: white; color: #f87171; cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -231,6 +248,14 @@
             await loadBookings();
         }
 
+        async function saveMeetingLink(id) {
+            const link = document.getElementById(`mlink-${id}`)?.value.trim();
+            const { error } = await supabaseClient.from('bookings').update({ meeting_link: link, updated_at: new Date().toISOString() }).eq('id', id);
+            if (error) { showToast(error.message, 'error'); return; }
+            showToast('Meeting link saved!', 'success');
+            await loadBookings();
+        }
+
         async function deleteBooking(id, clientName) {
             if (!confirm(`Delete booking for "${clientName}"? This cannot be undone.`)) return;
             const { error } = await supabaseClient.from('bookings').delete().eq('id', id);
@@ -269,6 +294,16 @@
             }
             if (b.admin_notes) {
                 extraHtml += `<div class="notes-display">Notes: ${b.admin_notes}</div>`;
+            }
+            if (['approved','confirmed'].includes(b.status)) {
+                extraHtml += `<div class="meeting-link-wrap">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="flex-shrink:0"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    <input class="meeting-link-input" id="mlink-${b.id}" type="url" placeholder="Paste Zoom / Meet / Teams link…" value="${b.meeting_link || ''}">
+                    <button class="btn-save-link" onclick="saveMeetingLink(${b.id})">Save</button>
+                </div>`;
+                if (b.meeting_link) {
+                    extraHtml += `<a class="btn-join" href="${b.meeting_link}" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.82v6.36a1 1 0 0 1-1.447.89L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>Join Meeting</a>`;
+                }
             }
             let actionsHtml = '';
             if (showActions && b.status === 'pending') {
@@ -329,6 +364,9 @@
             }
             if (b.admin_notes) {
                 extraHtml += `<div class="notes-display">Admin note: ${b.admin_notes}</div>`;
+            }
+            if (['approved','confirmed'].includes(b.status) && b.meeting_link) {
+                extraHtml += `<a class="btn-join" href="${b.meeting_link}" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.82v6.36a1 1 0 0 1-1.447.89L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>Join Meeting</a>`;
             }
             let actionsHtml = '';
             if (showCounterActions && b.status === 'counter_proposed') {
