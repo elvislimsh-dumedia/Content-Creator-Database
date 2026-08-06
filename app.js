@@ -428,6 +428,8 @@ function handleMultipleFiles(files) {
         return;
     }
     // Multi-file mode
+    currentRateCardFile = null;
+    currentImageData = null;
     uploadQueue = validFiles;
     currentQueueIndex = 0;
     showFileQueue();
@@ -516,11 +518,10 @@ async function processFileForQueue(file) {
     const parsed = parseRateCard(text);
     const entry = buildEntryFromParsed(parsed, null);
     const saved = await dbInsert(entry);
-    // Upload rate card to storage
-    if (imageData) {
-        const imgFile = base64ToFile(imageData, 'rate_card.jpg');
-        const compressed = await compressImage(imgFile);
-        const url = await uploadToStorage(compressed, storagePath(saved.id, 'ratecard', 'rate_card.jpg'));
+    // Keep the exact original document. OCR previews must never replace the
+    // uploaded JPG, PNG, or PDF in Storage.
+    if (file) {
+        const url = await uploadToStorage(file, storagePath(saved.id, 'ratecard', file.name));
         await dbUpdate(saved.id, { image: url });
     }
     return entry;
@@ -573,6 +574,7 @@ function buildEntryFromParsed(data, imageData) {
 
 let currentImageData = null;
 let currentProfilePhoto = null;
+let currentRateCardFile = null;
 
 // =====================
 // MODE TOGGLE (Upload vs Manual)
@@ -823,6 +825,10 @@ function handleFile(file) {
         alert('Please upload a JPG, PNG, or PDF file.');
         return;
     }
+
+    // Retain the original bytes and filename for the final Storage upload.
+    // currentImageData is only an OCR/onscreen preview.
+    currentRateCardFile = file;
 
     document.getElementById('processingSection').classList.remove('hidden');
     document.getElementById('formSection').classList.add('hidden');
@@ -1219,11 +1225,17 @@ document.getElementById('influencerForm').addEventListener('submit', async e => 
         const saved = await dbInsert(entry);
         const creatorId = saved.id;
 
-        // Upload rate card image to storage
-        if (currentImageData) {
-            const file = base64ToFile(currentImageData, 'rate_card.jpg');
-            const compressed = await compressImage(file);
-            const url = await uploadToStorage(compressed, storagePath(creatorId, 'ratecard', 'rate_card.jpg'));
+        // Upload the exact original document (JPG, PNG, or PDF). Fall back to
+        // the legacy OCR preview only for records created without a source file.
+        if (currentRateCardFile) {
+            const url = await uploadToStorage(
+                currentRateCardFile,
+                storagePath(creatorId, 'ratecard', currentRateCardFile.name)
+            );
+            await dbUpdate(creatorId, { image: url });
+        } else if (currentImageData) {
+            const previewFile = base64ToFile(currentImageData, 'rate_card.jpg');
+            const url = await uploadToStorage(previewFile, storagePath(creatorId, 'ratecard', previewFile.name));
             await dbUpdate(creatorId, { image: url });
         }
 
@@ -1239,6 +1251,7 @@ document.getElementById('influencerForm').addEventListener('submit', async e => 
         document.getElementById('extractedText').classList.add('hidden');
         populateDialCodeSelect(document.getElementById('f_dial_code'), '+65');
         currentImageData = null;
+        currentRateCardFile = null;
         currentProfilePhoto = null;
         fileInput.value = '';
         document.getElementById('profilePhotoPreview').innerHTML = '<span>+</span>';
@@ -1260,6 +1273,7 @@ document.getElementById('clearForm').addEventListener('click', () => {
     document.getElementById('extractedText').classList.add('hidden');
     populateDialCodeSelect(document.getElementById('f_dial_code'), '+65');
     currentImageData = null;
+    currentRateCardFile = null;
     currentProfilePhoto = null;
     fileInput.value = '';
     document.getElementById('profilePhotoPreview').innerHTML = '<span>+</span>';
@@ -1697,6 +1711,20 @@ function esc(str) {
     return div.innerHTML;
 }
 
+function isPdfDocument(source) {
+    if (!source) return false;
+    return source.startsWith('data:application/pdf') || /\.pdf(?:$|[?#])/i.test(source);
+}
+
+function renderRateCardDocument(source) {
+    if (!source) return '';
+    const safeSource = esc(source);
+    if (isPdfDocument(source)) {
+        return `<iframe src="${safeSource}" title="Original rate card PDF" style="width:100%;height:70vh;min-height:480px;border:1px solid #e5e5f0;border-radius:8px;margin-top:0.5rem;"></iframe>`;
+    }
+    return `<img src="${safeSource}" alt="Original rate card" style="max-width:100%;border-radius:8px;margin-top:0.5rem;">`;
+}
+
 let editingItemId = null;
 
 async function showDetail(id) {
@@ -1817,7 +1845,7 @@ async function showDetail(id) {
 
             ${item.notes ? `<div class="detail-section"><h4>Notes</h4><p>${esc(item.notes)}</p></div>` : ''}
 
-            ${item.image ? `<div class="detail-section"><div class="section-header-row"><h4>Original Rate Card</h4><button class="download-btn" onclick="downloadRateCard('${item.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download</button></div><img src="${item.image}" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>` : ''}
+            ${item.image ? `<div class="detail-section"><div class="section-header-row"><h4>Original Rate Card</h4><button class="download-btn" onclick="downloadRateCard('${item.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download</button></div>${renderRateCardDocument(item.image)}</div>` : ''}
 
             ${viewAttachmentsHTML ? `<div class="detail-section"><h4>Attachments</h4>${viewAttachmentsHTML}</div>` : ''}
         </div>
@@ -1963,7 +1991,16 @@ async function showEditMode(id) {
                 <textarea class="edit-field" data-field="notes" rows="3" placeholder="Notes">${esc(item.notes || '')}</textarea>
             </div>
 
-            ${item.image ? `<div class="detail-section"><h4>Original Rate Card</h4><img src="${item.image}" style="max-width:100%;border-radius:8px;margin-top:0.5rem;"></div>` : ''}
+            <div class="detail-section">
+                <div class="section-header-row">
+                    <h4>Original Rate Card</h4>
+                    <label class="att-upload-btn" style="margin:0;">
+                        ${item.image ? 'Replace Original' : 'Upload Original'}
+                        <input type="file" id="editRateCardInput" accept="image/jpeg,image/png,application/pdf" hidden>
+                    </label>
+                </div>
+                ${item.image ? renderRateCardDocument(item.image) : '<span class="att-empty">No original rate card</span>'}
+            </div>
 
             <div class="detail-section">
                 <h4>Attachments</h4>
@@ -1991,6 +2028,9 @@ async function showEditMode(id) {
     document.getElementById('modalAttachmentInput').addEventListener('change', e => {
         handleAttachmentUpload(e.target.files, item.id);
     });
+    document.getElementById('editRateCardInput').addEventListener('change', e => {
+        handleRateCardReplacement(e.target.files[0], item.id);
+    });
 
     // Profile photo upload
     document.getElementById('profilePhotoUpload').addEventListener('click', (e) => {
@@ -2001,6 +2041,20 @@ async function showEditMode(id) {
     document.getElementById('editProfilePhotoInput').addEventListener('change', e => {
         handleProfilePhotoUpload(e.target.files[0], item.id);
     });
+}
+
+async function handleRateCardReplacement(file, itemId) {
+    if (!file || (!file.type.match(/image\/(jpeg|png)/) && file.type !== 'application/pdf')) {
+        alert('Please select a JPG, PNG, or PDF file.');
+        return;
+    }
+    try {
+        const url = await uploadToStorage(file, storagePath(itemId, 'ratecard', file.name));
+        await dbUpdate(itemId, { image: url });
+        await showEditMode(itemId);
+    } catch (err) {
+        alert('Failed to replace original rate card: ' + err.message);
+    }
 }
 
 async function handleAttachmentUpload(files, itemId) {
@@ -2052,37 +2106,79 @@ async function handleProfilePhotoUpload(file, itemId) {
     }
 }
 
-function downloadFile(url, filename) {
+function fileNameFromSource(url, fallbackName) {
+    if (!url || url.startsWith('data:')) return fallbackName;
+    try {
+        const pathName = decodeURIComponent(new URL(url).pathname.split('/').pop() || '');
+        // storagePath prefixes files with a millisecond timestamp.
+        const originalName = pathName.replace(/^\d+_/, '');
+        return originalName || fallbackName;
+    } catch (e) {
+        return fallbackName;
+    }
+}
+
+function extensionForMime(mime) {
+    const cleanMime = (mime || '').split(';')[0].toLowerCase();
+    return {
+        'application/pdf': 'pdf',
+        'image/png': 'png',
+        'image/jpeg': 'jpg',
+        'image/jpg': 'jpg'
+    }[cleanMime] || '';
+}
+
+function ensureFileExtension(filename, mime) {
+    const ext = extensionForMime(mime);
+    if (!ext) return filename;
+    const currentExt = (filename.match(/\.([a-z0-9]+)$/i) || [])[1];
+    if (!currentExt) return `${filename}.${ext}`;
+    const normalized = currentExt.toLowerCase() === 'jpeg' ? 'jpg' : currentExt.toLowerCase();
+    return normalized === ext ? filename : filename.replace(/\.[a-z0-9]+$/i, `.${ext}`);
+}
+
+async function downloadBinaryFile(url, filename) {
     if (isStorageUrl(url)) {
-        // For storage URLs, fetch and download as blob
-        fetch(url)
-            .then(r => r.blob())
-            .then(blob => {
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(a.href);
-            })
-            .catch(() => window.open(url, '_blank'));
+        // Fetch the real binary bytes. Saving the URL string itself creates a
+        // corrupt file that looks like a JPG but cannot be opened.
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Download failed (${response.status})`);
+            const blob = await response.blob();
+            const finalName = ensureFileExtension(filename, blob.type || response.headers.get('content-type'));
+            const objectUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = objectUrl;
+            a.download = finalName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        } catch (error) {
+            console.error('File download failed:', error);
+            window.open(url, '_blank', 'noopener');
+        }
     } else {
         // Legacy base64
         const a = document.createElement('a');
         a.href = url;
-        a.download = filename;
+        const mime = (url.match(/^data:([^;,]+)/) || [])[1] || '';
+        a.download = ensureFileExtension(filename, mime);
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
     }
 }
 
-function downloadRateCard(itemId) {
-    const item = cachedCatalogue.find(i => String(i.id) === String(itemId));
+async function downloadRateCard(itemId) {
+    let item = cachedCatalogue.find(i => String(i.id) === String(itemId));
+    if (!item || !item.image) {
+        try { item = await dbGetOne(itemId); } catch (e) { /* handled below */ }
+    }
     if (!item || !item.image) return;
-    const ext = item.image.includes('.png') || item.image.startsWith('data:image/png') ? 'png' : 'jpg';
-    downloadFile(item.image, `${(item.name || 'rate-card').replace(/\s+/g, '_')}_rate_card.${ext}`);
+    const fallback = `${(item.name || 'rate-card').replace(/\s+/g, '_')}_rate_card`;
+    const filename = fileNameFromSource(item.image, fallback);
+    await downloadBinaryFile(item.image, filename);
 }
 
 function downloadAttachment(index) {
@@ -2094,7 +2190,7 @@ function downloadAttachment(index) {
     if (!att) return;
     const filename = att.name || (att.type === 'pdf' ? 'attachment.pdf' : 'attachment.jpg');
     const src = att.url || att.data;
-    downloadFile(src, filename);
+    downloadBinaryFile(src, filename);
 }
 
 function viewAttachment(index) {
@@ -2469,7 +2565,7 @@ async function logBackup(fileName, count) {
     } catch { /* ignore */ }
 }
 
-function downloadFile(content, fileName, mimeType) {
+function downloadTextFile(content, fileName, mimeType) {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2496,7 +2592,7 @@ document.getElementById('backupJSON').addEventListener('click', async () => {
     };
 
     const fileName = `du-creatives-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    downloadFile(JSON.stringify(backupData, null, 2), fileName, 'application/json');
+    downloadTextFile(JSON.stringify(backupData, null, 2), fileName, 'application/json');
     await logBackup(fileName, catalogue.length);
     loadLastBackupDate();
 });
@@ -2512,7 +2608,7 @@ document.getElementById('backupCSV').addEventListener('click', async () => {
     });
 
     const fileName = `du-creatives-backup-${new Date().toISOString().slice(0, 10)}.csv`;
-    downloadFile(csvRows.join('\n'), fileName, 'text/csv');
+    downloadTextFile(csvRows.join('\n'), fileName, 'text/csv');
     await logBackup(fileName, catalogue.length);
     loadLastBackupDate();
 });
